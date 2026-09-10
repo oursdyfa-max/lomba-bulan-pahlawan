@@ -1,0 +1,1 @@
+{"root":["./src/main.ts","./src/core/engine.ts","./src/core/gamestate.ts","./src/core/physics.ts","./src/entities/environment.ts","./src/entities/player.ts","./src/systems/debugger.ts","./src/ui/hud.ts","./src/ui/startscreen.ts"],"version":"5.9.3"}

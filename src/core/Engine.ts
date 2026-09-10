@@ -1,0 +1,101 @@
+import * as THREE from "three";
+import { Environment } from "../entities/Environment";
+import { Player } from "../entities/Player";
+import { Debugger } from "../systems/Debugger";
+import { HUD } from "../ui/HUD";
+import { gameState } from "./GameState";
+import { Physics } from "./Physics";
+
+export class Engine {
+  readonly scene: THREE.Scene;
+  private readonly camera: THREE.PerspectiveCamera;
+  private readonly renderer: THREE.WebGLRenderer;
+  private readonly clock = new THREE.Clock();
+  private readonly cameraTarget = new THREE.Vector3();
+  private readonly orbitTarget = new THREE.Vector3(0, 1, 0);
+
+  constructor(
+    private readonly canvas: HTMLElement,
+    scene: THREE.Scene,
+    private readonly physics: Physics,
+    private readonly player: Player,
+    private readonly environment: Environment,
+    private readonly debuggerSystem: Debugger,
+    private readonly hud: HUD,
+  ) {
+    this.scene = scene;
+    this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+    this.camera.position.set(0, 4, 8);
+
+    this.renderer = new THREE.WebGLRenderer({ antialias: true });
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.canvas.appendChild(this.renderer.domElement);
+
+    this.scene.background = new THREE.Color(0x9dc5c2);
+    this.addLighting();
+    this.scene.add(this.player.mesh);
+    window.addEventListener("resize", this.handleResize);
+  }
+
+  add(object: THREE.Object3D): void {
+    this.scene.add(object);
+  }
+
+  start(): void {
+    this.clock.start();
+    requestAnimationFrame(this.loop);
+  }
+
+  private readonly loop = (): void => {
+    const deltaTime = this.clock.getDelta();
+    if (gameState.currentLevel === "START") {
+      this.updateStartCamera();
+      this.hud.setInteractionHint(false);
+    } else {
+      this.player.update();
+      this.physics.update(deltaTime);
+      this.player.syncMesh();
+      this.environment.syncMeshes();
+      this.player.updateProximity(this.environment.obstacles);
+      this.hud.setInteractionHint(this.player.hasActivePatient);
+
+      this.player.getCameraPosition(this.cameraTarget);
+      const smoothing = 1 - Math.exp(-8 * deltaTime);
+      this.camera.position.lerp(this.cameraTarget, smoothing);
+      this.camera.lookAt(this.player.position);
+    }
+    this.debuggerSystem.update();
+    this.hud.update(this.player.position);
+    this.renderer.render(this.scene, this.camera);
+    requestAnimationFrame(this.loop);
+  };
+
+  private updateStartCamera(): void {
+    const elapsed = this.clock.elapsedTime;
+    const orbitRadius = 10;
+    this.camera.position.set(
+      Math.sin(elapsed * 0.16) * orbitRadius,
+      5 + Math.sin(elapsed * 0.22) * 0.35,
+      Math.cos(elapsed * 0.16) * orbitRadius,
+    );
+    this.camera.lookAt(this.orbitTarget);
+  }
+
+  private readonly handleResize = (): void => {
+    this.camera.aspect = window.innerWidth / window.innerHeight;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setSize(window.innerWidth, window.innerHeight);
+  };
+
+  private addLighting(): void {
+    this.scene.add(new THREE.AmbientLight(0xfff4d6, 0.6));
+    const directionalLight = new THREE.DirectionalLight(0xffe0a3, 1.0);
+    directionalLight.position.set(8, 14, 6);
+    directionalLight.castShadow = true;
+    this.scene.add(directionalLight);
+  }
+}
