@@ -7,6 +7,7 @@ export class Player {
   readonly body: CANNON.Body;
   private readonly keys = new Set<string>();
   private readonly moveSpeed = 20;
+  private controlsEnabled = true;
   private activePatient: Patient | null = null;
   private readonly interactionDistance = 2.5;
 
@@ -55,6 +56,12 @@ export class Player {
   }
 
   update(): void {
+    if (!this.controlsEnabled) {
+      this.body.velocity.x = 0;
+      this.body.velocity.z = 0;
+      return;
+    }
+
     const direction = new CANNON.Vec3(
       Number(this.keys.has("d")) - Number(this.keys.has("a")),
       0,
@@ -99,7 +106,20 @@ export class Player {
     this.world.removeBody(this.body);
   }
 
+  setControlsEnabled(enabled: boolean): void {
+    this.controlsEnabled = enabled;
+    if (!enabled) {
+      this.keys.clear();
+      this.body.velocity.x = 0;
+      this.body.velocity.z = 0;
+    }
+  }
+
   private readonly handleKeyDown = (event: KeyboardEvent): void => {
+    if (!this.controlsEnabled) {
+      return;
+    }
+
     if (this.isTypingTarget(event.target)) {
       return;
     }

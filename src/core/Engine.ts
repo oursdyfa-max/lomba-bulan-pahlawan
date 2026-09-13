@@ -5,6 +5,7 @@ import { Debugger } from "../systems/Debugger";
 import { HUD } from "../ui/HUD";
 import { gameState } from "./GameState";
 import { Physics } from "./Physics";
+import type { Level1 } from "../levels/Level1";
 
 export class Engine {
   readonly scene: THREE.Scene;
@@ -13,6 +14,9 @@ export class Engine {
   private readonly clock = new THREE.Clock();
   private readonly cameraTarget = new THREE.Vector3();
   private readonly orbitTarget = new THREE.Vector3(0, 1, 0);
+  private level1: Level1 | null = null;
+  private lastLevel = gameState.currentLevel;
+  private isCinematicMode = false;
 
   constructor(
     private readonly canvas: HTMLElement,
@@ -44,17 +48,60 @@ export class Engine {
     this.scene.add(object);
   }
 
+  getCamera(): THREE.PerspectiveCamera {
+    return this.camera;
+  }
+
+  getRenderElement(): HTMLElement {
+    return this.renderer.domElement;
+  }
+
+  setLevel1(level1: Level1): void {
+    this.level1 = level1;
+  }
+
+  enterLevel1(): void {
+    gameState.currentLevel = "LEVEL_1";
+    if (this.lastLevel === "LEVEL_1" || !this.level1) {
+      return;
+    }
+
+    this.level1.activate();
+    this.lastLevel = "LEVEL_1";
+  }
+
+  setCinematicMode(enabled: boolean): void {
+    if (this.isCinematicMode && !enabled) {
+      this.clock.getDelta();
+    }
+    this.isCinematicMode = enabled;
+  }
+
   start(): void {
     this.clock.start();
     requestAnimationFrame(this.loop);
   }
 
   private readonly loop = (): void => {
+    if (this.isCinematicMode) {
+      requestAnimationFrame(this.loop);
+      return;
+    }
+
     const deltaTime = this.clock.getDelta();
     if (gameState.currentLevel === "START") {
       this.updateStartCamera();
       this.hud.setInteractionHint(false);
+    } else if (gameState.currentLevel === "LEVEL_1" && this.level1) {
+      if (this.lastLevel !== "LEVEL_1") {
+        this.level1.activate();
+      }
+      this.level1.update();
+      this.hud.setInteractionHint(false);
     } else {
+      if (this.lastLevel === "LEVEL_1" && this.level1) {
+        this.level1.deactivate();
+      }
       this.player.update();
       this.physics.update(deltaTime);
       this.player.syncMesh();
@@ -67,6 +114,7 @@ export class Engine {
       this.camera.position.lerp(this.cameraTarget, smoothing);
       this.camera.lookAt(this.player.position);
     }
+    this.lastLevel = gameState.currentLevel;
     this.debuggerSystem.update();
     this.hud.update(this.player.position);
     this.renderer.render(this.scene, this.camera);

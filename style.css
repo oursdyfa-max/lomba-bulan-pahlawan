@@ -212,3 +212,137 @@ body { background: #182a2c; }
   font-size: 1.4rem;
   font-weight: 700;
 }
+
+.level1-ui {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: #f4f1de;
+  text-shadow: 0 2px 3px rgb(0 0 0 / 70%);
+}
+
+.level1-ui__counter {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  padding: 0.75rem 1rem;
+  border-right: 3px solid #e8b44f;
+  background: rgb(12 35 37 / 88%);
+  font: 700 0.95rem/1.2 monospace;
+}
+
+.level1-ui__modal {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.level1-ui__modal[hidden] {
+  display: none;
+}
+
+.level1-ui__card {
+  width: min(90vw, 38rem);
+  padding: 2rem;
+  border: 2px solid #e8b44f;
+  background: rgb(12 35 37 / 96%);
+  text-align: center;
+}
+
+.level1-ui__kicker {
+  margin: 0 0 0.75rem;
+  color: #e8b44f;
+  font: 700 0.75rem/1.4 monospace;
+  letter-spacing: 0.08em;
+}
+
+.level1-ui__card h2 {
+  margin: 0 0 1rem;
+  color: #f4f1de;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.5rem, 4vw, 2.4rem);
+}
+
+.level1-ui__message {
+  margin: 0;
+  color: #d8e2d8;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.level1-ui__continue {
+  margin-top: 1.5rem;
+  min-height: 2.8rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid #f4d27c;
+  background: #e8b44f;
+  color: #182a2c;
+  cursor: pointer;
+  font: 700 0.95rem/1.2 inherit;
+}
+
+.level1-ui__confirm {
+  margin-top: 1.5rem;
+  min-width: 10rem;
+  min-height: 2.8rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid #f4d27c;
+  background: #e8b44f;
+  color: #182a2c;
+  cursor: pointer;
+  font: 700 0.95rem/1.2 inherit;
+}
+
+.level1-ui--evaluation .level1-ui__modal {
+  pointer-events: auto;
+}
+
+.level1-ui--evaluation .level1-ui__card {
+  pointer-events: auto;
+}
+
+.level1-ui--mission .level1-ui__modal {
+  pointer-events: auto;
+}
+
+.level1-ui--mission .level1-ui__card {
+  pointer-events: auto;
+}
+
+#hud[hidden] { display: none; }
+
+.video-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  background: #000;
+  pointer-events: auto;
+}
+
+.video-screen[hidden] { display: none; }
+
+.video-screen__player {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.video-screen__skip {
+  position: absolute;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  z-index: 1;
+  min-height: 2.75rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid #f4d27c;
+  background: rgb(12 35 37 / 88%);
+  color: #f4f1de;
+  cursor: pointer;
+  font: 700 0.9rem/1.2 inherit;
+}
+
+.video-screen__skip:hover { background: #e8b44f; color: #182a2c; }

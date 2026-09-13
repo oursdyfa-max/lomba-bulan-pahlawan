@@ -30,11 +30,17 @@ export class GameState {
     } catch {
       // Storage can be unavailable in private browsing or restricted contexts.
     }
+
+    try {
+      window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch {
+      // Keep localStorage as the durable store when session storage is unavailable.
+    }
   }
 
   loadState(): void {
     try {
-      const rawState = window.localStorage.getItem(STORAGE_KEY);
+      const rawState = window.sessionStorage.getItem(STORAGE_KEY) ?? window.localStorage.getItem(STORAGE_KEY);
       if (!rawState) {
         return;
       }
@@ -59,6 +65,12 @@ export class GameState {
 
     try {
       window.localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // Keep the in-memory reset effective when storage is unavailable.
+    }
+
+    try {
+      window.sessionStorage.removeItem(STORAGE_KEY);
     } catch {
       // Keep the in-memory reset effective when storage is unavailable.
     }

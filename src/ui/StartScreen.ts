@@ -45,8 +45,8 @@ export class StartScreen {
 
     this.gameState.playerName = playerName;
     this.gameState.saveState();
-    this.overlay.classList.add("start-screen--exiting");
-    this.overlay.addEventListener("animationend", this.handleExitAnimationEnd, { once: true });
+    this.dispose();
+    this.onGameStart();
   };
 
   private readonly handleInputKeyDown = (event: KeyboardEvent): void => {
@@ -55,10 +55,11 @@ export class StartScreen {
     }
   };
 
-  private readonly handleExitAnimationEnd = (): void => {
-    this.overlay.hidden = true;
-    this.onGameStart();
-  };
+  private dispose(): void {
+    this.startButton.removeEventListener("click", this.handleStart);
+    this.nameInput.removeEventListener("keydown", this.handleInputKeyDown);
+    this.overlay.remove();
+  }
 
   private getElement<T extends HTMLElement>(id: string): T {
     const element = this.overlay.querySelector<T>(`#${id}`);
