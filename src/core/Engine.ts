@@ -32,10 +32,9 @@ export class Engine {
     this.camera.position.set(0, 4, 8);
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.enabled = false;
     this.canvas.appendChild(this.renderer.domElement);
 
     this.scene.background = new THREE.Color(0x9dc5c2);
@@ -96,7 +95,7 @@ export class Engine {
       if (this.lastLevel !== "LEVEL_1") {
         this.level1.activate();
       }
-      this.level1.update();
+      this.level1.update(deltaTime);
       this.hud.setInteractionHint(false);
     } else {
       if (this.lastLevel === "LEVEL_1" && this.level1) {
@@ -135,7 +134,7 @@ export class Engine {
   private readonly handleResize = (): void => {
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     this.renderer.setSize(window.innerWidth, window.innerHeight);
   };
 
@@ -143,7 +142,7 @@ export class Engine {
     this.scene.add(new THREE.AmbientLight(0xfff4d6, 0.6));
     const directionalLight = new THREE.DirectionalLight(0xffe0a3, 1.0);
     directionalLight.position.set(8, 14, 6);
-    directionalLight.castShadow = true;
+    directionalLight.castShadow = false;
     this.scene.add(directionalLight);
   }
 }

@@ -48,6 +48,7 @@ const player = new Player(physics.world, () => {
 });
 const engine = new Engine(canvas, scene, physics, player, environment, debuggerSystem, hud);
 engine.add(environment.group);
+environment.group.visible = gameState.currentLevel !== "LEVEL_1";
 const levelManager = new LevelManager(gameState);
 const level1UI = new Level1UI(uiLayer, gameState, levelManager);
 const videoScreen = new VideoScreen(uiLayer);
