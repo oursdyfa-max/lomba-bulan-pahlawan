@@ -16,6 +16,8 @@ const LEVEL2_ASSETS = {
 
 const PLAYER_SPEED = 3.2;
 const PLAYER_EYE_HEIGHT = 1.6;
+const GRAVITY = 9.8 * 10.0;
+const JUMP_FORCE = 350;
 const NPC_SPEED = 1.2;
 const INTERACTION_DISTANCE = 2.5;
 const WAYPOINT_NAMES = ["POS_DUDUK_1", "POS_DUDUK_2", "POS_DUDUK_3", "POS_ARAH", "POS_INTERAKSI"] as const;
@@ -51,6 +53,9 @@ export class Level2 {
   private readonly mixers = new Map<THREE.Object3D, THREE.AnimationMixer>();
   private readonly moveState = { forward: false, backward: false, left: false, right: false, up: false, down: false };
   private readonly raycaster = new THREE.Raycaster();
+  private readonly collisionRaycaster = new THREE.Raycaster();
+  private readonly floorRaycaster = new THREE.Raycaster();
+  private readonly colliderObjects: THREE.Object3D[] = [];
   private readonly center = new THREE.Vector2(0, 0);
   private readonly pointerLock: PointerLockControls;
   private readonly ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
@@ -60,6 +65,13 @@ export class Level2 {
   private readonly lookTarget = new THREE.Vector3();
   private readonly playerPosition = new THREE.Vector3();
   private readonly walkingDirection = new THREE.Vector3();
+  private readonly velocity = new THREE.Vector3();
+  private readonly direction = new THREE.Vector3();
+  private readonly floorDirection = new THREE.Vector3(0, -1, 0);
+  private readonly collisionDirection = new THREE.Vector3();
+  private readonly collisionOrigin = new THREE.Vector3();
+  private readonly playerRadius = 0.5;
+  private canJump = false;
   private environmentModel: THREE.Object3D | null = null;
   private patientModel: THREE.Object3D | null = null;
   private sittingClip: THREE.AnimationClip | null = null;
@@ -133,6 +145,8 @@ export class Level2 {
     this.pointerLock.enabled = false;
     if (this.pointerLock.isLocked) this.pointerLock.unlock();
     this.resetMoveState();
+    this.velocity.set(0, 0, 0);
+    this.canJump = false;
     this.environment.visible = false;
     if (this.environmentModel) this.environmentModel.visible = false;
     this.npcAgents.forEach((agent) => { agent.root.visible = false; });
@@ -174,6 +188,7 @@ export class Level2 {
     this.lockPrompt.remove();
     this.npcAgents.length = 0;
     this.environmentModel = null;
+    this.colliderObjects.length = 0;
   }
 
   private async loadAssets(): Promise<void> {
@@ -184,6 +199,7 @@ export class Level2 {
       this.prepareEnvironment(environmentAsset.scene);
       this.extractWaypoints(environmentAsset.scene);
       this.hideWaypointNodes(environmentAsset.scene);
+      this.spawnPlayerAtInteractionPoint();
       this.showLockPrompt(true);
     } catch (error) {
       console.error("Gagal memuat PosKesehatan.glb:", error);
@@ -228,6 +244,12 @@ export class Level2 {
     });
     this.environmentModel = model;
     this.scene.add(model);
+    const spawnPoint = model.getObjectByName("Cube.004");
+    model.traverse((child) => {
+      if (!(child instanceof THREE.Mesh)) return;
+      if (spawnPoint && spawnPoint.getObjectById(child.id)) return;
+      this.colliderObjects.push(child);
+    });
   }
 
   private extractWaypoints(model: THREE.Object3D): void {
@@ -302,9 +324,25 @@ export class Level2 {
       agent.routeIndex = 0;
       this.playNpcAnimation(agent, this.sittingClip);
     }
-    this.camera.position.set(0, 1.6, 4.0);
-    this.camera.lookAt(0, 1.0, 0);
+    if (this.waypointPositions.has("POS_INTERAKSI")) this.spawnPlayerAtInteractionPoint();
+    else {
+      this.camera.position.set(0, 1.6, 4.0);
+      this.camera.lookAt(0, 1.0, 0);
+    }
     this.startNextNpc();
+  }
+
+  private spawnPlayerAtInteractionPoint(): void {
+    const interactionPoint = this.waypointPositions.get("POS_INTERAKSI");
+    if (!interactionPoint) {
+      console.warn("POS_INTERAKSI tidak ditemukan; memakai spawn kamera default.");
+      this.camera.position.set(0, 1.6, 4.0);
+      this.camera.lookAt(0, 1.0, 0);
+      return;
+    }
+    this.pointerLock.object.position.set(interactionPoint.x, interactionPoint.y + PLAYER_EYE_HEIGHT, interactionPoint.z);
+    this.camera.lookAt(interactionPoint.x, interactionPoint.y + 1.0, interactionPoint.z - 1);
+    console.log("Spawn player di POS_INTERAKSI:", interactionPoint);
   }
 
   private startNextNpc(): void {
@@ -318,14 +356,69 @@ export class Level2 {
   private updateCamera(deltaTime: number): void {
     if (!this.pointerLock.isLocked) return;
     const speed = PLAYER_SPEED * deltaTime;
-    if (this.moveState.forward) this.pointerLock.moveForward(speed);
-    if (this.moveState.backward) this.pointerLock.moveForward(-speed);
-    if (this.moveState.right) this.pointerLock.moveRight(speed);
-    if (this.moveState.left) this.pointerLock.moveRight(-speed);
-    if (this.moveState.up) this.camera.position.y += speed;
-    if (this.moveState.down) this.camera.position.y -= speed;
-    this.camera.position.y = Math.max(0.1, this.camera.position.y);
+    this.velocity.x *= Math.max(0, 1 - 10 * deltaTime);
+    this.velocity.z *= Math.max(0, 1 - 10 * deltaTime);
+    this.velocity.y -= GRAVITY * deltaTime;
+
+    this.direction.set(0, 0, 0);
+    if (this.moveState.forward) this.direction.z -= 1;
+    if (this.moveState.backward) this.direction.z += 1;
+    if (this.moveState.left) this.direction.x -= 1;
+    if (this.moveState.right) this.direction.x += 1;
+    if (this.direction.lengthSq() > 0) this.direction.normalize();
+    this.velocity.x = this.direction.x * PLAYER_SPEED;
+    this.velocity.z = this.direction.z * PLAYER_SPEED;
+
+    this.updateFloorState();
+    if (this.moveState.up && this.canJump) {
+      this.velocity.y += JUMP_FORCE * deltaTime;
+      this.canJump = false;
+    }
+
+    if (this.velocity.x !== 0) this.tryHorizontalMove("right", this.velocity.x * deltaTime);
+    if (this.velocity.z !== 0) this.tryHorizontalMove("forward", -this.velocity.z * deltaTime);
+    this.camera.position.y += this.velocity.y * deltaTime;
+    this.updateFloorState();
     this.updateHUDPosition(this.camera.position);
+  }
+
+  private updateFloorState(): void {
+    if (this.colliderObjects.length === 0) return;
+    this.floorRaycaster.set(this.camera.position, this.floorDirection);
+    this.floorRaycaster.near = 0;
+    this.floorRaycaster.far = PLAYER_EYE_HEIGHT + 0.05;
+    const hit = this.floorRaycaster.intersectObjects(this.colliderObjects, true)[0];
+    if (!hit || hit.distance > PLAYER_EYE_HEIGHT) return;
+    this.camera.position.y = hit.point.y + PLAYER_EYE_HEIGHT;
+    this.velocity.y = Math.max(0, this.velocity.y);
+    this.canJump = true;
+  }
+
+  private tryHorizontalMove(axis: "right" | "forward", distance: number): void {
+    this.camera.getWorldDirection(this.walkingDirection);
+    this.walkingDirection.y = 0;
+    this.walkingDirection.normalize();
+    if (axis === "right") {
+      this.collisionDirection.crossVectors(this.walkingDirection, this.camera.up).normalize();
+      if (!this.canMove(this.collisionDirection, distance)) return;
+      this.pointerLock.moveRight(distance);
+      return;
+    }
+    if (!this.canMove(this.walkingDirection, distance)) return;
+    this.pointerLock.moveForward(distance);
+  }
+
+  private canMove(direction: THREE.Vector3, distance: number): boolean {
+    if (distance === 0 || this.colliderObjects.length === 0) {
+      return true;
+    }
+    this.collisionOrigin.copy(this.camera.position);
+    this.collisionDirection.copy(direction).normalize().multiplyScalar(Math.sign(distance));
+    this.collisionRaycaster.set(this.collisionOrigin, this.collisionDirection);
+    this.collisionRaycaster.near = 0;
+    this.collisionRaycaster.far = Math.abs(distance) + this.playerRadius;
+    const hit = this.collisionRaycaster.intersectObjects(this.colliderObjects, true)[0];
+    return !hit || hit.distance > Math.abs(distance) + this.playerRadius;
   }
 
   private updateNpcStateMachines(deltaTime: number): void {
@@ -423,10 +516,10 @@ export class Level2 {
   };
 
   private readonly handleKeyDown = (event?: KeyboardEvent): void => {
-    if (!event || typeof event.key !== "string") return;
-    const normalizedKey = event.key.toLowerCase();
-    if (!this.isActive || !this.pointerLock.isLocked || normalizedKey.length === 0) return;
-    if (event.code === "KeyE") {
+    if (!event || !event.key || typeof event.key !== "string") return;
+    const key = event.key.toLowerCase();
+    if (!this.isActive || !this.pointerLock.isLocked) return;
+    if (key === "e") {
       event.preventDefault();
       this.tryInteract();
       return;
@@ -439,9 +532,11 @@ export class Level2 {
   };
 
   private readonly handleKeyUp = (event?: KeyboardEvent): void => {
-    if (!event || typeof event.key !== "string") return;
-    const key = this.getMoveKey(event.code);
-    if (key) this.moveState[key] = false;
+    if (!event || !event.key || typeof event.key !== "string") return;
+    const key = event.key.toLowerCase();
+    const movementKey = this.getMoveKey(event.code);
+    if (movementKey) this.moveState[movementKey] = false;
+    if (key === " ") this.moveState.up = false;
   };
 
   private getMoveKey(code: string): MoveKey | null {
