@@ -206,8 +206,8 @@ export class Level1UI {
     continueButton.textContent = "LANJUT KE ERA KEMERDEKAAN";
     continueButton.hidden = false;
     continueButton.onclick = () => {
-      this.levelManager.loadLevel2();
       this.hide();
+      this.levelManager.beginLevel2Transition();
     };
   }
 

@@ -6,6 +6,7 @@ import { HUD } from "../ui/HUD";
 import { gameState } from "./GameState";
 import { Physics } from "./Physics";
 import type { Level1 } from "../levels/Level1";
+import type { Level2 } from "../levels/Level2";
 
 export class Engine {
   readonly scene: THREE.Scene;
@@ -15,6 +16,7 @@ export class Engine {
   private readonly cameraTarget = new THREE.Vector3();
   private readonly orbitTarget = new THREE.Vector3(0, 1, 0);
   private level1: Level1 | null = null;
+  private level2: Level2 | null = null;
   private lastLevel = gameState.currentLevel;
   private isCinematicMode = false;
 
@@ -59,6 +61,10 @@ export class Engine {
     this.level1 = level1;
   }
 
+  setLevel2(level2: Level2): void {
+    this.level2 = level2;
+  }
+
   enterLevel1(): void {
     gameState.currentLevel = "LEVEL_1";
     if (this.lastLevel === "LEVEL_1" || !this.level1) {
@@ -67,6 +73,19 @@ export class Engine {
 
     this.level1.activate();
     this.lastLevel = "LEVEL_1";
+  }
+
+  enterLevel2(): void {
+    if (!this.level2) {
+      return;
+    }
+
+    if (this.lastLevel === "LEVEL_1" && this.level1) {
+      this.level1.deactivate();
+    }
+    this.environment.group.visible = false;
+    this.level2.activate();
+    this.lastLevel = "LEVEL_2";
   }
 
   setCinematicMode(enabled: boolean): void {
@@ -97,9 +116,18 @@ export class Engine {
       }
       this.level1.update(deltaTime);
       this.hud.setInteractionHint(false);
+    } else if (gameState.currentLevel === "LEVEL_2" && this.level2) {
+      if (this.lastLevel !== "LEVEL_2") {
+        this.level2.activate();
+      }
+      this.level2.update(deltaTime);
+      this.hud.setInteractionHint(false);
     } else {
       if (this.lastLevel === "LEVEL_1" && this.level1) {
         this.level1.deactivate();
+      }
+      if (this.lastLevel === "LEVEL_2" && this.level2) {
+        this.level2.deactivate();
       }
       this.player.update();
       this.physics.update(deltaTime);
@@ -115,7 +143,9 @@ export class Engine {
     }
     this.lastLevel = gameState.currentLevel;
     this.debuggerSystem.update();
-    this.hud.update(this.player.position);
+    if (gameState.currentLevel !== "LEVEL_2") {
+      this.hud.update(this.player.position);
+    }
     this.renderer.render(this.scene, this.camera);
     requestAnimationFrame(this.loop);
   };

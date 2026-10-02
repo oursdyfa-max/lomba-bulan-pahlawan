@@ -10,8 +10,10 @@ import { StartScreen } from "./ui/StartScreen";
 import { gameState } from "./core/GameState";
 import { LevelManager } from "./core/LevelManager";
 import { Level1 } from "./levels/Level1";
+import { Level2 } from "./levels/Level2";
 import { Level1UI } from "./ui/Level1UI";
 import { VideoScreen } from "./ui/VideoScreen";
+import { Level2UI } from "./ui/Level2UI";
 
 const canvas = document.querySelector<HTMLElement>("#canvas");
 const uiLayer = document.querySelector<HTMLElement>("#ui-layer");
@@ -33,6 +35,9 @@ document.addEventListener("click", (event) => {
 const physics = new Physics();
 const environment = new Environment(physics.world);
 const scene = new THREE.Scene();
+const levelRoot = new THREE.Group();
+levelRoot.name = "ActiveLevelRoot";
+scene.add(levelRoot);
 const debuggerSystem = new Debugger(scene, physics.world);
 const hud = new HUD(uiLayer);
 let levelCompleteShown = false;
@@ -49,11 +54,33 @@ const player = new Player(physics.world, () => {
 const engine = new Engine(canvas, scene, physics, player, environment, debuggerSystem, hud);
 engine.add(environment.group);
 environment.group.visible = gameState.currentLevel !== "LEVEL_1";
-const levelManager = new LevelManager(gameState);
+const levelManager = new LevelManager(gameState, levelRoot);
 const level1UI = new Level1UI(uiLayer, gameState, levelManager);
 const videoScreen = new VideoScreen(uiLayer);
-const level1 = new Level1(scene, engine.getCamera(), engine.getRenderElement(), player, gameState, level1UI);
+const level1 = new Level1(levelRoot, engine.getCamera(), engine.getRenderElement(), player, gameState, level1UI);
+const level2UI = new Level2UI(uiLayer, gameState, () => levelManager.completeLevel2());
+const level2 = new Level2(levelRoot, engine.getCamera(), engine.getRenderElement(), gameState, level2UI);
 engine.setLevel1(level1);
+engine.setLevel2(level2);
+levelManager.configureLevel2Transition(
+  () => {
+    level1.deactivate();
+    level1.dispose();
+    level1UI.hide();
+  },
+  (onComplete) => videoScreen.playLevel2(onComplete),
+  () => engine.enterLevel2(),
+);
+levelManager.configureLevel3Transition(
+  () => {
+    level2.deactivate();
+    level2.dispose();
+  },
+  () => {
+    environment.group.visible = false;
+    hud.setEra("Era Modern");
+  },
+);
 hud.setPlayerName(gameState.playerName || "Dokter Djawa");
 hud.setScore(gameState.score);
 hud.setEra("Hindia Belanda");
@@ -80,7 +107,12 @@ if (gameState.currentLevel === "START") {
     gameState.saveState();
     environment.group.visible = false;
     hud.setPlayerName(gameState.playerName);
-    videoScreen.play(startLevel1);
+    videoScreen.playLevel1(startLevel1);
   });
 }
+
+if (gameState.currentLevel === "LEVEL_2") {
+  engine.enterLevel2();
+}
+
 engine.start();

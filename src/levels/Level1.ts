@@ -45,10 +45,12 @@ export class Level1 {
     new URL("../../assets/Sound/suara-tikus.mp3", import.meta.url).href,
   );
   private isActive = false;
+  private isDisposed = false;
+  private assetsRequested = false;
   private selectedRat: THREE.Object3D | null = null;
 
   constructor(
-    private readonly scene: THREE.Scene,
+    private readonly scene: THREE.Object3D,
     private readonly camera: THREE.PerspectiveCamera,
     private readonly pointerTarget: HTMLElement,
     private readonly player: Player,
@@ -57,9 +59,6 @@ export class Level1 {
   ) {
     this.environment.name = "Level1Environment";
     this.sfxRat.preload = "auto";
-    this.scene.add(this.environment);
-    void this.loadAssets();
-
     this.controls = new OrbitControls(this.camera, this.pointerTarget);
     this.controls.enableZoom = false;
     this.controls.enablePan = false;
@@ -118,6 +117,13 @@ export class Level1 {
     this.player.setControlsEnabled(false);
     this.player.mesh.visible = false;
     this.controls.enabled = true;
+    if (this.environment.parent !== this.scene) {
+      this.scene.add(this.environment);
+    }
+    if (!this.assetsRequested) {
+      this.assetsRequested = true;
+      void this.loadAssets();
+    }
     this.camera.position.set(8, 6, 10);
     this.controls.update();
     this.ui.showMission();
@@ -142,9 +148,16 @@ export class Level1 {
   }
 
   dispose(): void {
+    if (this.isDisposed) {
+      return;
+    }
+
+    this.isDisposed = true;
+    this.isActive = false;
     this.pointerTarget.removeEventListener("pointerdown", this.handlePointerDown);
     this.controls.dispose();
     this.transformControls.dispose();
+    this.scene.remove(this.transformControls.getHelper());
     this.gui.destroy();
     for (const rat of this.rats) {
       this.ratMixers.get(rat)?.stopAllAction();
@@ -156,7 +169,11 @@ export class Level1 {
     this.ratRoots.clear();
     this.initialRatPositions.clear();
     this.rats.length = 0;
+    this.scene.remove(this.environment);
     this.disposeObject(this.environment);
+    this.sfxRat.pause();
+    this.sfxRat.removeAttribute("src");
+    this.sfxRat.load();
   }
 
   private async loadAssets(): Promise<void> {
@@ -165,6 +182,10 @@ export class Level1 {
         loadGLTF(new URL("../../assets/3d/Level1.glb", import.meta.url).href),
         loadGLTF(new URL("../../assets/3d/tikus.glb", import.meta.url).href),
       ]);
+
+      if (this.isDisposed) {
+        return;
+      }
 
       this.addEnvironment(environmentAsset.scene);
       this.spawnRats(ratAsset.scene, ratAsset.animations);
@@ -380,7 +401,14 @@ export class Level1 {
       if (child instanceof THREE.Mesh) {
         child.geometry.dispose();
         const materials = Array.isArray(child.material) ? child.material : [child.material];
-        materials.forEach((material) => material.dispose());
+        materials.forEach((material) => {
+          material.dispose();
+          Object.values(material).forEach((value) => {
+            if (value instanceof THREE.Texture) {
+              value.dispose();
+            }
+          });
+        });
       }
     });
   }

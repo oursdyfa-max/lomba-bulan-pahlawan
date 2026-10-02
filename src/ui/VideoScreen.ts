@@ -1,49 +1,54 @@
 export class VideoScreen {
-  private readonly overlay: HTMLDivElement;
-  private readonly video: HTMLVideoElement;
-  private readonly skipButton: HTMLButtonElement;
+  private overlay: HTMLDivElement | null = null;
+  private video: HTMLVideoElement | null = null;
+  private skipButton: HTMLButtonElement | null = null;
   private isFinished = false;
   private isResetting = false;
   private onComplete: (() => void) | null = null;
 
-  constructor(private readonly root: HTMLElement) {
+  constructor(private readonly root: HTMLElement) {}
+
+  private play(source: string, onComplete: () => void): void {
+    this.finish(false);
+    this.isFinished = false;
+    this.isResetting = false;
+    this.onComplete = onComplete;
     this.overlay = document.createElement("div");
     this.overlay.className = "video-screen";
-    this.overlay.setAttribute("aria-label", "Video pembuka misi");
-    this.overlay.hidden = true;
+    this.overlay.setAttribute("role", "dialog");
+    this.overlay.setAttribute("aria-label", "Video portal level berikutnya");
 
     this.video = document.createElement("video");
     this.video.className = "video-screen__player";
-    this.video.src = new URL("../../assets/Level1/portal-lvl1.mp4", import.meta.url).href;
+    this.video.src = source;
     this.video.preload = "auto";
     this.video.playsInline = true;
     this.video.controls = false;
     this.video.disablePictureInPicture = true;
+    this.video.muted = false;
+    this.video.volume = 1;
     this.video.addEventListener("ended", this.handleEnded);
     this.video.addEventListener("pause", this.handlePause);
     this.video.addEventListener("seeking", this.handleSeeking);
     this.video.addEventListener("contextmenu", this.handleContextMenu);
+
     this.skipButton = document.createElement("button");
     this.skipButton.className = "video-screen__skip";
     this.skipButton.type = "button";
     this.skipButton.textContent = "Lewati Video";
     this.skipButton.addEventListener("click", this.handleSkip);
-    this.overlay.appendChild(this.video);
-    this.overlay.appendChild(this.skipButton);
+    this.overlay.append(this.video, this.skipButton);
     this.root.appendChild(this.overlay);
     this.video.load();
+    void this.video.play().catch(() => undefined);
   }
 
-  play(onComplete: () => void): void {
-    this.isFinished = false;
-    this.onComplete = onComplete;
-    this.video.onended = null;
-    this.overlay.hidden = false;
-    if (this.video.readyState > HTMLMediaElement.HAVE_NOTHING) {
-      this.isResetting = true;
-      this.video.currentTime = 0;
-    }
-    void this.video.play().catch(() => undefined);
+  playLevel1(onComplete: () => void): void {
+    this.play(new URL("../../assets/Level1/portal-lvl1.mp4", import.meta.url).href, onComplete);
+  }
+
+  playLevel2(onComplete: () => void): void {
+    this.play(new URL("../../assets/Level2/portal-lvl2.mp4", import.meta.url).href, onComplete);
   }
 
   private readonly handleEnded = (): void => {
@@ -54,29 +59,40 @@ export class VideoScreen {
     this.finish();
   };
 
-  private finish(): void {
+  private finish(invokeCallback = true): void {
     if (this.isFinished) {
       return;
     }
 
     this.isFinished = true;
-    this.video.pause();
-    this.video.removeEventListener("ended", this.handleEnded);
-    this.video.removeEventListener("pause", this.handlePause);
-    this.video.removeEventListener("seeking", this.handleSeeking);
-    this.video.removeEventListener("contextmenu", this.handleContextMenu);
-    this.skipButton.removeEventListener("click", this.handleSkip);
-    this.video.removeAttribute("src");
-    this.video.load();
-    this.overlay.remove();
+    const video = this.video;
+    const overlay = this.overlay;
+    const skipButton = this.skipButton;
+    video?.pause();
+    video?.removeEventListener("ended", this.handleEnded);
+    video?.removeEventListener("pause", this.handlePause);
+    video?.removeEventListener("seeking", this.handleSeeking);
+    video?.removeEventListener("contextmenu", this.handleContextMenu);
+    skipButton?.removeEventListener("click", this.handleSkip);
+    if (video) {
+      video.removeAttribute("src");
+      video.load();
+    }
+    overlay?.remove();
+    this.video = null;
+    this.overlay = null;
+    this.skipButton = null;
     const onComplete = this.onComplete;
     this.onComplete = null;
-    onComplete?.();
+    if (invokeCallback) {
+      onComplete?.();
+    }
   };
 
   private readonly handlePause = (): void => {
-    if (!this.isFinished && !this.video.ended && this.video.currentTime < this.video.duration - 0.05) {
-      void this.video.play().catch(() => undefined);
+    const video = this.video;
+    if (video && !this.isFinished && !video.ended && video.currentTime < video.duration - 0.05) {
+      void video.play().catch(() => undefined);
     }
   };
 
@@ -86,7 +102,7 @@ export class VideoScreen {
       return;
     }
 
-    if (!this.isFinished) {
+    if (this.video && !this.isFinished) {
       this.video.currentTime = 0;
     }
   };
