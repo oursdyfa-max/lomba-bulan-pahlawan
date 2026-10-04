@@ -68,7 +68,8 @@ export class Level3 {
 
     const video = document.createElement("video");
     video.id = "video-lvl3";
-    video.src = new URL("../../assets/Level3/portal-lvl3.mp4", import.meta.url).href;
+    video.crossOrigin = "anonymous"; // WAJIB diset sebelum .src agar video eksternal boleh dipakai di Canvas/Three.js
+    video.src = "https://res.cloudinary.com/ujxsrtnw/video/upload/portal-lvl3.mp4";
     video.autoplay = true;
     video.playsInline = true;
     Object.assign(video.style, { width: "100%", height: "100%", objectFit: "cover" });

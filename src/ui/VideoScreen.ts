@@ -20,6 +20,7 @@ export class VideoScreen {
 
     this.video = document.createElement("video");
     this.video.className = "video-screen__player";
+    this.video.crossOrigin = "anonymous"; // WAJIB diset sebelum .src agar video eksternal boleh dipakai di Canvas/Three.js
     this.video.src = source;
     this.video.preload = "auto";
     this.video.playsInline = true;
@@ -44,11 +45,11 @@ export class VideoScreen {
   }
 
   playLevel1(onComplete: () => void): void {
-    this.play(new URL("../../assets/Level1/portal-lvl1.mp4", import.meta.url).href, onComplete);
+    this.play("https://res.cloudinary.com/ujxsrtnw/video/upload/portal-lvl1.mp4", onComplete);
   }
 
   playLevel2(onComplete: () => void): void {
-    this.play(new URL("../../assets/Level2/portal-lvl2.mp4", import.meta.url).href, onComplete);
+    this.play("https://res.cloudinary.com/ujxsrtnw/video/upload/portal-lvl2.mp4", onComplete);
   }
 
   private readonly handleEnded = (): void => {
