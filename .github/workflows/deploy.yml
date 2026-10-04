@@ -11,11 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Get Latest Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # 1. Siapkan environment Node.js
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22' # LTS — hilangkan peringatan deprecated Node.js 20
 
