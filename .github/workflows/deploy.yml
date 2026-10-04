@@ -17,7 +17,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20' # Gunakan versi Node.js yang sesuai dengan lokal Anda
+          node-version: '22' # LTS — hilangkan peringatan deprecated Node.js 20
 
       # 2. Install semua dependency (Three.js, Vite, dll)
       - name: Install Dependencies
