@@ -7,6 +7,7 @@ import { Player } from "./entities/Player";
 import { Debugger } from "./systems/Debugger";
 import { HUD } from "./ui/HUD";
 import { StartScreen } from "./ui/StartScreen";
+import { MainMenuScreen } from "./ui/MainMenuScreen";
 import { gameState } from "./core/GameState";
 import { LevelManager } from "./core/LevelManager";
 import { Level1 } from "./levels/Level1";
@@ -104,13 +105,15 @@ const startLevel1 = (): void => {
 };
 
 if (gameState.currentLevel === "START") {
-  new StartScreen(uiLayer, gameState, () => {
-    engine.setCinematicMode(true);
-    gameState.currentLevel = "LEVEL_1";
-    gameState.saveState();
-    environment.group.visible = false;
-    hud.setPlayerName(gameState.playerName);
-    videoScreen.playLevel1(startLevel1);
+  new MainMenuScreen(uiLayer, () => {
+    new StartScreen(uiLayer, gameState, () => {
+      engine.setCinematicMode(true);
+      gameState.currentLevel = "LEVEL_1";
+      gameState.saveState();
+      environment.group.visible = false;
+      hud.setPlayerName(gameState.playerName);
+      videoScreen.playLevel1(startLevel1);
+    });
   });
 }
 
