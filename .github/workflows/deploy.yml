@@ -1,0 +1,23 @@
+name: Deploy to InfinityFree
+
+on:
+  push:
+    branches:
+      - main # Ganti ke 'master' jika nama branch utama Anda adalah master
+
+jobs:
+  web-deploy:
+    name: Deploying Files via FTP
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get Latest Code
+        uses: actions/checkout@v4
+
+      - name: Sync Files to InfinityFree
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: /htdocs/ # Folder tujuan publik di InfinityFree
+          dangerous-clean-slate: false # Set true jika ingin menghapus file lama yang tidak ada di repo
