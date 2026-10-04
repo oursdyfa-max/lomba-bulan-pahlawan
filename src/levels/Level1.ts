@@ -7,6 +7,7 @@ import { GameState } from "../core/GameState";
 import { loadGLTF } from "../core/AssetLoader";
 import { Player } from "../entities/Player";
 import { Level1UI } from "../ui/Level1UI";
+import { missionBanner } from "../ui/MissionBanner";
 
 interface RatData {
   isRat: true;
@@ -127,6 +128,7 @@ export class Level1 {
     this.camera.position.set(8, 6, 10);
     this.controls.update();
     this.ui.showMission();
+    missionBanner.show("🔍 MISI: Cari dan klik tikus-tikus pembawa wabah pes!");
   }
 
   deactivate(): void {
@@ -135,6 +137,7 @@ export class Level1 {
     this.setEditorMode(false);
     this.gui.domElement.style.display = "none";
     this.ui.hide();
+    missionBanner.hide();
   }
 
   update(deltaTime: number): void {
@@ -144,6 +147,17 @@ export class Level1 {
 
     for (const mixer of this.ratMixers.values()) {
       mixer.update(deltaTime);
+    }
+
+    // Efek pulse pada tikus agar terlihat interaktif
+    const time = performance.now() * 0.004;
+    for (let i = 0; i < this.rats.length; i += 1) {
+      const rat = this.rats[i];
+      if (!rat) continue;
+      const base = (rat.userData.baseScale as number | undefined) ?? rat.scale.x;
+      rat.userData.baseScale = base;
+      const pulse = 1 + Math.sin(time + i * 2) * 0.08;
+      rat.scale.setScalar(base * pulse);
     }
   }
 

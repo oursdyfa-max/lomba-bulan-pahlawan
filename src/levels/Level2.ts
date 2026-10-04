@@ -6,6 +6,7 @@ import { loadGLTF } from "../core/AssetLoader";
 import { GameState } from "../core/GameState";
 import { Level2UI } from "../ui/Level2UI";
 import { playBenar, playSalah } from "../core/Sfx";
+import { missionBanner } from "../ui/MissionBanner";
 
 const LEVEL2_ASSETS = {
   environment: new URL("../../assets/Level2/PosKesehatan.glb", import.meta.url).href,
@@ -100,6 +101,11 @@ export class Level2 {
   private activeNpc: NpcAgent | null = null;
   private nextNpcIndex = 0;
   private isActive = false;
+  private reachedInteractPoint = false;
+  private interactBeacon: THREE.Mesh | null = null;
+  private interactBeaconBaseY = 0;
+  private guideText: HTMLDivElement | null = null;
+  private pulseTargets: THREE.Object3D[] = [];
   private isDisposed = false;
   private assetsRequested = false;
   private isModalOpen = false;
@@ -196,13 +202,27 @@ export class Level2 {
 
     this.notificationUI = document.createElement("div");
     Object.assign(this.notificationUI.style, {
-      position: "fixed", top: "24px", left: "50%", transform: "translateX(-50%)", zIndex: "1001",
+      position: "fixed", top: "70px", left: "50%", transform: "translateX(-50%)", zIndex: "1001",
       display: "none", color: "#fff", font: "700 24px sans-serif", textAlign: "center",
       textShadow: "3px 3px 0 #000, -1px -1px 0 #000", pointerEvents: "none", maxWidth: "90vw",
     });
     document.body.appendChild(this.notificationUI);
     this.endOverlay = this.createEndOverlay();
     document.body.appendChild(this.endOverlay);
+
+    this.guideText = document.createElement("div");
+    this.guideText.id = "level2-guide-text";
+    this.guideText.textContent = "🩸 Menuju Pos Interaksi...";
+    Object.assign(this.guideText.style, {
+      position: "fixed", top: "70px", left: "50%", transform: "translateX(-50%)",
+      zIndex: "1000", color: "#f4d27c", font: "700 18px monospace",
+      textShadow: "0 2px 4px rgba(0,0,0,0.8)", pointerEvents: "none", display: "none",
+      animation: "guideBlink 1s steps(2, start) infinite",
+    });
+    const guideStyle = document.createElement("style");
+    guideStyle.textContent = "@keyframes guideBlink { to { visibility: hidden; } }";
+    document.head.appendChild(guideStyle);
+    document.body.appendChild(this.guideText);
 
     this.scene.add(this.environment, this.ambientLight, this.directionalLight);
     this.pointerTarget.addEventListener("click", this.handleCanvasClick);
@@ -283,6 +303,8 @@ export class Level2 {
     this.uiHintElement.style.display = "none";
     this.ui.showMission();
     this.resetGameplayState();
+    missionBanner.show("Dekati pasien yang ke arah meja");
+    this.reachedInteractPoint = false;
     if (!this.assetsRequested) {
       this.assetsRequested = true;
       void this.loadAssets();
@@ -308,15 +330,47 @@ export class Level2 {
     this.endOverlay.style.display = "none";
     this.isModalOpen = false;
     this.ui.hide();
+    missionBanner.hide();
+    if (this.interactBeacon) this.interactBeacon.visible = false;
+    if (this.guideText) this.guideText.style.display = "none";
   }
 
   update(deltaTime: number): void {
     if (!this.isActive) return;
-    if (this.bathroomMode) return;
+    if (this.bathroomMode) {
+      // Pulse efek pada objek sarang nyamuk (DRUM/EMBER)
+      const time = performance.now() * 0.004;
+      for (let i = 0; i < this.pulseTargets.length; i += 1) {
+        const target = this.pulseTargets[i];
+        if (!target.visible) continue;
+        const base = (target.userData.baseScale as number | undefined) ?? target.scale.x;
+        target.userData.baseScale = base;
+        target.scale.setScalar(base * (1 + Math.sin(time + i * 2) * 0.06));
+      }
+      return;
+    }
     for (const mixer of this.mixers.values()) mixer.update(deltaTime);
     this.updateCamera(deltaTime);
     this.updateNpcStateMachines(deltaTime);
     this.updateProximityHint();
+
+    // Waypoint ke POS_INTERAKSI
+    if (this.interactBeacon && this.interactBeacon.visible) {
+      this.interactBeacon.position.y = this.interactBeaconBaseY + Math.sin(performance.now() * 0.004) * 0.25;
+      this.interactBeacon.rotation.y += deltaTime * 1.5;
+      const interactionPoint = this.waypointPositions.get("POS_INTERAKSI");
+      if (interactionPoint) {
+        const dist = Math.hypot(
+          this.camera.position.x - interactionPoint.x,
+          this.camera.position.z - interactionPoint.z,
+        );
+        if (dist < 2.0) {
+          this.reachedInteractPoint = true;
+          this.interactBeacon.visible = false;
+          if (this.guideText) this.guideText.style.display = "none";
+        }
+      }
+    }
   }
 
   dispose(): void {
@@ -361,6 +415,7 @@ export class Level2 {
       this.extractWaypoints(environmentAsset.scene);
       this.hideWaypointNodes(environmentAsset.scene);
       this.spawnPlayerAtInteractionPoint();
+      this.createInteractBeacon();
       this.showLockPrompt(true);
     } catch (error) {
       console.error("Gagal memuat PosKesehatan.glb:", error);
@@ -491,6 +546,22 @@ export class Level2 {
       this.camera.lookAt(0, 1.0, 0);
     }
     this.startNextNpc();
+  }
+
+  private createInteractBeacon(): void {
+    const point = this.waypointPositions.get("POS_INTERAKSI");
+    if (!point) return;
+    const cone = new THREE.Mesh(
+      new THREE.ConeGeometry(0.4, 0.9, 4),
+      new THREE.MeshBasicMaterial({ color: 0xf4d27c }),
+    );
+    cone.rotation.x = Math.PI;
+    cone.position.set(point.x, point.y + 3.0, point.z);
+    cone.name = "InteractBeacon";
+    this.interactBeaconBaseY = cone.position.y;
+    this.scene.add(cone);
+    this.interactBeacon = cone;
+    if (this.guideText) this.guideText.style.display = "block";
   }
 
   private spawnPlayerAtInteractionPoint(): void {
@@ -743,6 +814,14 @@ export class Level2 {
       this.bathroomFoundCount = 0;
       this.notificationUI.style.display = "block";
       this.notificationUI.textContent = "Cari DRUM1, DRUM2, dan EMBER";
+      missionBanner.show("🦟 MISI: Cari dan klik tempat-tempat yang berpotensi menjadi sarang nyamuk!");
+      if (this.interactBeacon) this.interactBeacon.visible = false;
+      if (this.guideText) this.guideText.style.display = "none";
+      this.pulseTargets = [];
+      bathroom.scene.traverse((child) => {
+        const name = child.name.toUpperCase();
+        if (this.targetNames.some((t) => name.includes(t))) this.pulseTargets.push(child);
+      });
       this.pointerLock.enabled = false;
       if (this.pointerLock.isLocked) this.pointerLock.unlock();
       this.camera.position.set(-45.3, 38.3, 2.1);
@@ -797,6 +876,7 @@ export class Level2 {
     this.correctAnswers = 0;
     this.showEndPanel("panel-obj-found");
     this.endOverlay.style.display = "flex";
+    missionBanner.hide();
   }
 
   private readonly handleStartQuiz = (): void => {
