@@ -33,7 +33,7 @@ export class VideoScreen {
     this.video.addEventListener("contextmenu", this.handleContextMenu);
 
     this.skipButton = document.createElement("button");
-    this.skipButton.className = "video-screen__skip";
+    this.skipButton.className = "btn-skip-video";
     this.skipButton.type = "button";
     this.skipButton.textContent = "Lewati Video";
     this.skipButton.addEventListener("click", this.handleSkip);

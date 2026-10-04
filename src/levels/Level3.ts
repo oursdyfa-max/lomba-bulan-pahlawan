@@ -2,6 +2,8 @@ import * as THREE from "three";
 import { GameState } from "../core/GameState";
 import { Player } from "../entities/Player";
 import { loadGLTF } from "../core/AssetLoader";
+import { playMenuAudio } from "../core/MenuAudio";
+import { playBenar, playSalah } from "../core/Sfx";
 
 const QUIZ_LEVEL3 = [
   {
@@ -74,12 +76,8 @@ export class Level3 {
 
     const skipButton = document.createElement("button");
     skipButton.type = "button";
-    skipButton.textContent = "SKIP";
-    Object.assign(skipButton.style, {
-      position: "absolute", right: "24px", bottom: "24px", padding: "10px 22px",
-      background: "rgba(255,255,255,0.85)", border: "none", borderRadius: "6px",
-      fontWeight: "bold", cursor: "pointer", zIndex: "3001",
-    });
+    skipButton.className = "btn-skip-video";
+    skipButton.textContent = "Lewati Video";
     skipButton.addEventListener("click", () => this.finishVideo(true));
 
     this.videoOverlay.append(video, skipButton);
@@ -158,83 +156,71 @@ export class Level3 {
   private buildOverlay(): void {
     const overlay = document.createElement("div");
     overlay.id = "level3-overlay";
-    Object.assign(overlay.style, {
-      position: "fixed", inset: "0", zIndex: "2000", background: "rgba(0,0,0,0.8)",
-      display: "flex", justifyContent: "center", alignItems: "center",
-      fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-    });
+    overlay.className = "game-popup-overlay";
+    overlay.style.zIndex = "2000";
 
-    const cardStyle =
-      "background:#fff; padding:32px; border-radius:12px; width:560px; max-width:92vw; " +
-      "box-shadow:0 10px 25px rgba(0,0,0,0.5); text-align:center; color:#333; display:none;";
-    const btnStyle =
-      "background:#e74c3c; color:#fff; border:none; padding:12px 20px; border-radius:6px; " +
-      "cursor:pointer; font-weight:bold; width:100%; font-size:15px; margin-top:10px;";
-    const optStyle =
-      "display:block; text-align:left; background:#f8f9fa; color:#333; border:1px solid #ddd; " +
-      "padding:12px; border-radius:6px; cursor:pointer; font-weight:500; width:100%; margin-top:8px;";
     const playerName = this.gameState.playerName || "Dokter Djawa";
 
     overlay.innerHTML = `
       <!-- a. PANEL MISI -->
-      <div id="panel-misi" class="l3-panel" style="${cardStyle}">
-        <h2>🦠 MISI 03 — KRISIS PANDEMI</h2>
-        <p style="text-align:left; line-height:1.6">Agen <strong>${playerName}</strong>, pandemi COVID-19 sedang berlangsung. Anda bertugas membantu mengarahkan pasien ke jalur yang tepat berdasarkan informasi pemeriksaan yang tersedia. Periksa kondisi pasien dan buat keputusan!</p>
-        <button id="btn-misi-start" style="${btnStyle}">MULAI PEMERIKSAAN</button>
+      <div id="panel-misi" class="l3-panel game-popup-box" style="display:none">
+        <h2 class="game-popup-title">🦠 MISI 03 — KRISIS PANDEMI</h2>
+        <p class="game-popup-text" style="text-align:left">Agen <strong>${playerName}</strong>, pandemi COVID-19 sedang berlangsung. Anda bertugas membantu mengarahkan pasien ke jalur yang tepat berdasarkan informasi pemeriksaan yang tersedia. Periksa kondisi pasien dan buat keputusan!</p>
+        <button id="btn-misi-start" class="game-popup-btn">MULAI PEMERIKSAAN</button>
       </div>
 
       <!-- b. PANEL PASIEN 1 -->
-      <div id="panel-pasien1" class="l3-panel" style="${cardStyle}">
-        <h2>Pasien 1:</h2>
-        <ul style="text-align:left; line-height:1.8">
+      <div id="panel-pasien1" class="l3-panel game-popup-box" style="display:none">
+        <h2 class="game-popup-title">Pasien 1:</h2>
+        <ul class="game-popup-text" style="text-align:left; line-height:1.8">
           <li>🌡️ Suhu: 39°C</li><li>🤒 Demam</li><li>😷 Batuk</li>
           <li>😮‍💨 Mengeluh sulit bernapas</li><li>🥱 Tubuh lemas</li>
         </ul>
-        <p>“Berdasarkan kondisi pasien, tindakan mana yang paling tepat?”</p>
-        <button class="opt" data-correct="true" style="${optStyle}">A. Arahkan ke Jalur Pemeriksaan / Isolasi</button>
-        <button class="opt" data-correct="false" style="${optStyle}">B. Arahkan ke Jalur Vaksinasi</button>
+        <p class="game-popup-text">“Berdasarkan kondisi pasien, tindakan mana yang paling tepat?”</p>
+        <button class="opt game-popup-option" data-correct="true">A. Arahkan ke Jalur Pemeriksaan / Isolasi</button>
+        <button class="opt game-popup-option" data-correct="false">B. Arahkan ke Jalur Vaksinasi</button>
         <p id="p1-feedback" style="display:none; text-align:left; font-weight:bold"></p>
-        <button id="p1-next" style="${btnStyle} display:none; display:none">Lanjut Pasien 2</button>
+        <button id="p1-next" class="game-popup-btn" style="display:none">Lanjut Pasien 2</button>
       </div>
 
       <!-- c. PANEL PASIEN 2 -->
-      <div id="panel-pasien2" class="l3-panel" style="${cardStyle}">
-        <h2>Pasien 2:</h2>
-        <ul style="text-align:left; line-height:1.8">
+      <div id="panel-pasien2" class="l3-panel game-popup-box" style="display:none">
+        <h2 class="game-popup-title">Pasien 2:</h2>
+        <ul class="game-popup-text" style="text-align:left; line-height:1.8">
           <li>🌡️ Suhu: 36,7°C</li><li>😊 Tidak demam</li><li>🙂 Tidak batuk</li>
           <li>💪 Kondisi tubuh baik</li><li>💉 Belum mendapatkan vaksinasi</li>
         </ul>
-        <p>“Berdasarkan kondisi pasien, tindakan mana yang paling tepat?”</p>
-        <button class="opt" data-correct="false" style="${optStyle}">A. Arahkan ke Jalur Pemeriksaan / Isolasi</button>
-        <button class="opt" data-correct="true" style="${optStyle}">B. Arahkan ke Jalur Vaksinasi</button>
+        <p class="game-popup-text">“Berdasarkan kondisi pasien, tindakan mana yang paling tepat?”</p>
+        <button class="opt game-popup-option" data-correct="false">A. Arahkan ke Jalur Pemeriksaan / Isolasi</button>
+        <button class="opt game-popup-option" data-correct="true">B. Arahkan ke Jalur Vaksinasi</button>
         <p id="p2-feedback" style="display:none; text-align:left; font-weight:bold"></p>
-        <button id="p2-next" style="${btnStyle} display:none; display:none">Lanjut</button>
+        <button id="p2-next" class="game-popup-btn" style="display:none">Lanjut</button>
       </div>
 
       <!-- d. PANEL SEJARAH -->
-      <div id="panel-sejarah" class="l3-panel" style="${cardStyle}">
-        <h2>📜 INFORMASI SEJARAH LEVEL 3 (KAPSUL SEJARAH)</h2>
-        <p style="text-align:justify; line-height:1.6">Pandemi COVID-19 membawa tantangan besar bagi Indonesia dan dunia. Berbagai upaya dilakukan untuk mengurangi penyebaran penyakit, termasuk pembatasan kegiatan masyarakat, penggunaan masker, pengujian, isolasi, serta vaksinasi. Pengalaman ini menunjukkan bagaimana strategi kesehatan masyarakat terus berkembang menghadapi penyakit menular.</p>
-        <button id="btn-ke-kuis" style="${btnStyle}">LANJUT KE KUIS</button>
+      <div id="panel-sejarah" class="l3-panel game-popup-box" style="display:none">
+        <h2 class="game-popup-title">📜 INFORMASI SEJARAH LEVEL 3 (KAPSUL SEJARAH)</h2>
+        <p class="game-popup-text" style="text-align:justify">Pandemi COVID-19 membawa tantangan besar bagi Indonesia dan dunia. Berbagai upaya dilakukan untuk mengurangi penyebaran penyakit, termasuk pembatasan kegiatan masyarakat, penggunaan masker, pengujian, isolasi, serta vaksinasi. Pengalaman ini menunjukkan bagaimana strategi kesehatan masyarakat terus berkembang menghadapi penyakit menular.</p>
+        <button id="btn-ke-kuis" class="game-popup-btn">LANJUT KE KUIS</button>
       </div>
 
       <!-- e. PANEL KUIS -->
-      <div id="panel-kuis" class="l3-panel" style="${cardStyle}">
-        <h2>KUIS LEVEL 3</h2>
-        <p id="kuis-soal" style="text-align:left"></p>
-        <div id="kuis-opsi"></div>
-        <p id="kuis-feedback" style="display:none; text-align:left; font-weight:bold"></p>
-        <button id="kuis-next" style="${btnStyle} display:none; display:none">Pertanyaan Selanjutnya</button>
+      <div id="panel-kuis" class="l3-panel quiz-container" style="display:none">
+        <h2 class="quiz-title">KUIS LEVEL 3</h2>
+        <p id="kuis-soal" class="quiz-question" style="text-align:left"></p>
+        <div id="kuis-opsi" class="quiz-options"></div>
+        <p id="kuis-feedback" class="quiz-feedback" style="display:none; text-align:left"></p>
+        <button id="kuis-next" class="quiz-next-btn" style="display:none">Pertanyaan Selanjutnya</button>
       </div>
 
       <!-- f. PANEL HASIL -->
-      <div id="panel-hasil" class="l3-panel" style="${cardStyle}">
-        <h2>11. 🏆 HASIL LEVEL 3</h2>
+      <div id="panel-hasil" class="l3-panel game-popup-box" style="display:none">
+        <h2 class="game-popup-title">11. 🏆 HASIL LEVEL 3</h2>
         <h3>LEVEL 3 SELESAI!</h3>
-        <p>🌡️ Pemeriksaan: BERHASIL</p>
-        <p>🧠 Kuis: <span id="hasil-kuis">0/3</span></p>
-        <p>🏅 Lencana: AGEN KESEHATAN MODERN</p>
-        <button id="btn-laporan" style="${btnStyle}">LIHAT LAPORAN MISI</button>
+        <p class="game-popup-text">🌡️ Pemeriksaan: BERHASIL</p>
+        <p class="game-popup-text">🧠 Kuis: <span id="hasil-kuis">0/3</span></p>
+        <p class="game-popup-text">🏅 Lencana: AGEN KESEHATAN MODERN</p>
+        <button id="btn-laporan" class="game-popup-btn">LIHAT LAPORAN MISI</button>
       </div>
     `;
 
@@ -285,6 +271,11 @@ export class Level3 {
       btn.addEventListener("click", () => {
         panel.querySelectorAll<HTMLButtonElement>("button.opt").forEach((b) => (b.disabled = true));
         const correct = btn.dataset.correct === "true";
+        if (correct) {
+          playBenar();
+        } else {
+          playSalah();
+        }
         if (feedback) {
           feedback.textContent = correct ? benarText : salahText;
           feedback.style.display = "block";
@@ -307,6 +298,7 @@ export class Level3 {
 
     soalEl.textContent = `Soal ${this.quizIndex + 1}: ${quiz.question}`;
     feedback.style.display = "none";
+    feedback.className = "quiz-feedback";
     nextBtn.style.display = "none";
     nextBtn.textContent = this.quizIndex === QUIZ_LEVEL3.length - 1 ? "Lihat Hasil" : "Pertanyaan Selanjutnya";
     opsiEl.replaceChildren();
@@ -314,18 +306,23 @@ export class Level3 {
     quiz.options.forEach((label, index) => {
       const btn = document.createElement("button");
       btn.type = "button";
+      btn.className = "quiz-option-btn";
       btn.textContent = `${String.fromCharCode(65 + index)}. ${label}`;
-      Object.assign(btn.style, {
-        display: "block", textAlign: "left", background: "#f8f9fa", color: "#333",
-        border: "1px solid #ddd", padding: "12px", borderRadius: "6px", cursor: "pointer",
-        fontWeight: "500", width: "100%", marginTop: "8px",
-      });
       btn.addEventListener("click", () => {
-        opsiEl.querySelectorAll<HTMLButtonElement>("button").forEach((b) => (b.disabled = true));
+        opsiEl.querySelectorAll<HTMLButtonElement>("button").forEach((b, i) => {
+          b.disabled = true;
+          if (i === quiz.correctIndex) b.classList.add("quiz-btn-correct");
+          else if (i === index) b.classList.add("quiz-btn-wrong");
+        });
         const correct = index === quiz.correctIndex;
-        if (correct) this.quizScore += 1;
+        if (correct) {
+          this.quizScore += 1;
+          playBenar();
+        } else {
+          playSalah();
+        }
         feedback.textContent = correct ? "✅ Benar!" : "❌ Salah. Coba pelajari kembali.";
-        feedback.style.color = correct ? "#18844b" : "#b03a2e";
+        feedback.className = `quiz-feedback ${correct ? "quiz-feedback--correct" : "quiz-feedback--wrong"}`;
         feedback.style.display = "block";
         nextBtn.style.display = "block";
       });
@@ -372,50 +369,46 @@ export class Level3 {
       "background: radial-gradient(circle at center, #1a2a6c, #112 80%); " +
       "display:flex; justify-content:center; align-items:center; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; color:#eee;";
 
-    const cardStyle =
-      "background:rgba(0,0,0,0.45); border:1px solid rgba(255,255,255,0.2); padding:36px; border-radius:14px; " +
-      "width:560px; max-width:92vw; text-align:center; box-shadow:0 0 40px rgba(52,152,219,0.35); display:none;";
-    const btnStyle =
-      "background:#3498db; color:#fff; border:none; padding:12px 28px; border-radius:8px; cursor:pointer; " +
-      "font-weight:bold; font-size:15px; margin-top:18px;";
+    const cardStyle = "display:none;";
+    const btnStyle = "width:100%;";
 
     overlay.innerHTML = `
-      <div id="panel-end-intro" class="end-panel" style="${cardStyle}">
+      <div id="panel-end-intro" class="end-panel game-popup-box" style="${cardStyle}">
         <div style="font-size:64px; animation:badgeBounce 1.2s infinite alternate">🏅</div>
-        <h2>🏆 AKHIR PERMAINAN</h2>
+        <h2 class="game-popup-title">🏆 AKHIR PERMAINAN</h2>
         <h3>🎉 KAMU HEBAT!</h3>
-        <p>Terima kasih atas dedikasimu, Agen <span id="end-player-name1" style="color:#f1c40f">${playerName}</span>.</p>
-        <p>Kamu telah menjelajahi perjalanan sejarah kesehatan Indonesia melalui tiga era.</p>
-        <button id="end-next-1" style="${btnStyle}">LANJUT</button>
+        <p class="game-popup-text">Terima kasih atas dedikasimu, Agen <span id="end-player-name1" style="color:#f1c40f">${playerName}</span>.</p>
+        <p class="game-popup-text">Kamu telah menjelajahi perjalanan sejarah kesehatan Indonesia melalui tiga era.</p>
+        <button id="end-next-1" class="game-popup-btn">LANJUT</button>
       </div>
 
-      <div id="panel-end-report" class="end-panel" style="${cardStyle} text-align:left">
-        <h2 style="text-align:center">📊 LAPORAN MISI</h2>
-        <p><strong>Nama Agen:</strong> <span id="end-player-name2" style="color:#f1c40f; font-weight:bold;">${playerName}</span></p>
-        <p><strong>Era yang diselesaikan:</strong><br>
+      <div id="panel-end-report" class="end-panel game-popup-box" style="${cardStyle} text-align:left">
+        <h2 class="game-popup-title" style="text-align:center">📊 LAPORAN MISI</h2>
+        <p class="game-popup-text"><strong>Nama Agen:</strong> <span id="end-player-name2" style="color:#f1c40f; font-weight:bold;">${playerName}</span></p>
+        <p class="game-popup-text"><strong>Era yang diselesaikan:</strong><br>
           ✓ Era Kolonial — Wabah Pes<br>
           ✓ Era Kemerdekaan — Pemberantasan Cacar / Malaria<br>
           ✓ Era Modern — COVID-19
         </p>
-        <p><strong>Misi utama:</strong> <span style="color:#27ae60;">3/3 berhasil</span></p>
-        <p><strong>Jawaban benar:</strong> <span id="end-total-correct">${totalCorrect}/9</span></p>
-        <p><strong>Skor akhir:</strong> <span id="end-final-score" style="color:#3498db; font-weight:bold;">${finalScore}</span></p>
-        <p><strong>🏆 Predikat:</strong> <span id="end-title" style="color:#e74c3c; font-weight:bold;">${title}</span></p>
-        <button id="end-next-2" style="${btnStyle} width:100%">LANJUT</button>
+        <p class="game-popup-text"><strong>Misi utama:</strong> <span style="color:#27ae60;">3/3 berhasil</span></p>
+        <p class="game-popup-text"><strong>Jawaban benar:</strong> <span id="end-total-correct">${totalCorrect}/9</span></p>
+        <p class="game-popup-text"><strong>Skor akhir:</strong> <span id="end-final-score" style="color:#3498db; font-weight:bold;">${finalScore}</span></p>
+        <p class="game-popup-text"><strong>🏆 Predikat:</strong> <span id="end-title" style="color:#e74c3c; font-weight:bold;">${title}</span></p>
+        <button id="end-next-2" class="game-popup-btn" style="${btnStyle}">LANJUT</button>
       </div>
 
-      <div id="panel-end-badge" class="end-panel" style="${cardStyle}">
+      <div id="panel-end-badge" class="end-panel game-popup-box" style="${cardStyle}">
         <div style="font-size:64px">🏅</div>
-        <h2>🏅 DETEKTIF SEJARAH MEDIS</h2>
-        <p>Diberikan kepada Agen <span id="end-player-name3" style="color:#f1c40f">${playerName}</span></p>
-        <p>Karena telah berhasil menyelesaikan seluruh simulasi dan mempelajari perjalanan penanganan penyakit menular dari masa ke masa.</p>
-        <button id="end-next-3" style="${btnStyle}">LANJUT</button>
+        <h2 class="game-popup-title">🏅 DETEKTIF SEJARAH MEDIS</h2>
+        <p class="game-popup-text">Diberikan kepada Agen <span id="end-player-name3" style="color:#f1c40f">${playerName}</span></p>
+        <p class="game-popup-text">Karena telah berhasil menyelesaikan seluruh simulasi dan mempelajari perjalanan penanganan penyakit menular dari masa ke masa.</p>
+        <button id="end-next-3" class="game-popup-btn">LANJUT</button>
       </div>
 
-      <div id="panel-end-actions" class="end-panel" style="${cardStyle}">
-        <h2>PILIHAN AKHIR</h2>
-        <button id="btn-main-lagi" style="${btnStyle} width:100%">🔄 MAIN LAGI</button>
-        <button id="btn-ke-menu" style="${btnStyle} width:100%; background:#7f8c8d">🏠 KEMBALI KE MENU</button>
+      <div id="panel-end-actions" class="end-panel game-popup-box" style="${cardStyle}">
+        <h2 class="game-popup-title">PILIHAN AKHIR</h2>
+        <button id="btn-main-lagi" class="game-popup-btn" style="${btnStyle}">🔄 MAIN LAGI</button>
+        <button id="btn-ke-menu" class="game-popup-btn" style="${btnStyle}; background:#7f8c8d">🏠 KEMBALI KE MENU</button>
       </div>
     `;
 
@@ -434,10 +427,22 @@ export class Level3 {
     overlay.querySelector("#end-next-2")?.addEventListener("click", () => showEndPanel("panel-end-badge"));
     overlay.querySelector("#end-next-3")?.addEventListener("click", () => showEndPanel("panel-end-actions"));
     overlay.querySelector("#btn-main-lagi")?.addEventListener("click", () => {
+      // Simpan nama agen, reset skor & progres kuis, lalu reload penuh ke Level 1.
+      const savedName = this.gameState.playerName;
+      try {
+        localStorage.removeItem("quiz_correct_level1");
+        localStorage.removeItem("quiz_correct_level2");
+        localStorage.removeItem("quiz_correct_level3");
+        const freshState = JSON.stringify({ playerName: savedName, score: 0, currentLevel: "START" });
+        localStorage.setItem("dokter_djawa_state", freshState);
+        sessionStorage.setItem("dokter_djawa_state", freshState);
+        localStorage.setItem("dokter_djawa_restart", "1");
+      } catch { /* ignore */ }
       window.location.href = "index.html";
     });
     overlay.querySelector("#btn-ke-menu")?.addEventListener("click", () => {
       this.gameState.resetState();
+      playMenuAudio();
       window.location.href = "index.html";
     });
 

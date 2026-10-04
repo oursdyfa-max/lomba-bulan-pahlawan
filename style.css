@@ -327,6 +327,82 @@ body { background: #182a2c; }
 
 .level1-ui__next[hidden] { display: none; }
 
+/* ---------- Global Quiz Theme (master template: Level 1) ---------- */
+.quiz-container {
+  width: min(90vw, 38rem);
+  padding: 2rem;
+  border: 2px solid #e8b44f;
+  background: rgb(12 35 37 / 96%);
+  color: #f4f1de;
+  text-align: center;
+  text-shadow: 0 2px 3px rgb(0 0 0 / 70%);
+}
+
+.quiz-title {
+  margin: 0 0 1rem;
+  color: #f4f1de;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.5rem, 4vw, 2.4rem);
+}
+
+.quiz-question {
+  margin: 0;
+  color: #d8e2d8;
+  font-size: 1rem;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.quiz-options {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 1.25rem;
+  text-align: left;
+}
+
+.quiz-option-btn,
+.quiz-next-btn {
+  min-height: 2.8rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid #8ca49b;
+  background: #1b3b3b;
+  color: #f4f1de;
+  cursor: pointer;
+  font: 600 0.95rem/1.35 inherit;
+  text-align: left;
+}
+
+.quiz-option-btn:hover:not(:disabled),
+.quiz-next-btn:hover {
+  border-color: #f4d27c;
+  background: #285454;
+}
+
+.quiz-option-btn:disabled { cursor: default; }
+
+.quiz-btn-correct { border-color: #8dd694; background: #245c45; }
+
+.quiz-btn-wrong { border-color: #ef8d82; background: #673b3b; }
+
+.quiz-feedback {
+  margin: 1.25rem 0 0;
+  white-space: pre-line;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.quiz-feedback--correct { color: #a5e6aa; }
+
+.quiz-feedback--wrong { color: #ffb0a6; }
+
+.quiz-next-btn {
+  margin: 1.25rem auto 0;
+  border-color: #f4d27c;
+  background: #e8b44f;
+  color: #182a2c;
+  text-align: center;
+}
+
 .level1-ui__continue {
   margin-top: 1.5rem;
   min-height: 2.8rem;
@@ -373,6 +449,90 @@ body { background: #182a2c; }
 
 #hud[hidden] { display: none; }
 
+/* ---------- Global Popup Theme (master template: Kapsul Sejarah Level 1) ---------- */
+.game-popup-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 6000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.7);
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: #f4f1de;
+}
+
+.game-popup-box {
+  width: min(92vw, 38rem);
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 2rem;
+  border: 2px solid #e8b44f;
+  background: rgb(12 35 37 / 96%);
+  color: #f4f1de;
+  text-align: center;
+  text-shadow: 0 2px 3px rgb(0 0 0 / 70%);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+.game-popup-title {
+  margin: 0 0 1rem;
+  color: #f4f1de;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.5rem, 4vw, 2.4rem);
+}
+
+.game-popup-kicker {
+  margin: 0 0 0.75rem;
+  color: #e8b44f;
+  font: 700 0.75rem/1.4 monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.game-popup-text {
+  margin: 0 0 1rem;
+  color: #d8e2d8;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.game-popup-option {
+  display: block;
+  min-height: 2.8rem;
+  width: 100%;
+  margin-top: 0.6rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid #8ca49b;
+  background: #1b3b3b;
+  color: #f4f1de;
+  cursor: pointer;
+  font: 600 0.95rem/1.35 inherit;
+  text-align: left;
+}
+
+.game-popup-option:hover:not(:disabled) {
+  border-color: #f4d27c;
+  background: #285454;
+}
+
+.game-popup-option:disabled { cursor: default; }
+
+.game-popup-btn {
+  margin-top: 1.25rem;
+  min-height: 2.8rem;
+  padding: 0.7rem 1.5rem;
+  border: 1px solid #f4d27c;
+  background: #e8b44f;
+  color: #182a2c;
+  cursor: pointer;
+  font: 700 0.95rem/1.2 inherit;
+  border-radius: 0;
+  transition: background 0.2s;
+}
+
+.game-popup-btn:hover { background: #f4d27c; }
+
 .video-screen {
   position: absolute;
   inset: 0;
@@ -406,6 +566,24 @@ body { background: #182a2c; }
 }
 
 .video-screen__skip:hover { background: #e8b44f; color: #182a2c; }
+
+/* Standar tombol lewati video untuk semua level */
+.btn-skip-video {
+  position: absolute;
+  right: 1.5rem;
+  top: 1.5rem;
+  z-index: 3001;
+  min-height: 2.75rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid #f4d27c;
+  background: rgb(12 35 37 / 88%);
+  color: #f4f1de;
+  cursor: pointer;
+  font: 700 0.9rem/1.2 inherit;
+  transition: background 0.2s, color 0.2s;
+}
+
+.btn-skip-video:hover { background: #e8b44f; color: #182a2c; }
 
 .level2-ui {
   position: absolute;

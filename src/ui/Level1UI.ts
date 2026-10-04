@@ -35,6 +35,8 @@ const QUIZ_QUESTIONS: QuizQuestion[] = [
   },
 ];
 
+import { playBenar, playSalah } from "../core/Sfx";
+
 export class Level1UI {
   private readonly root: HTMLDivElement;
   private readonly counter: HTMLDivElement;
@@ -174,6 +176,11 @@ export class Level1UI {
     });
 
     const isCorrect = answerIndex === question.correctAnswer;
+    if (isCorrect) {
+      playBenar();
+    } else {
+      playSalah();
+    }
     optionButtons[question.correctAnswer]?.classList.add("level1-ui__option--correct");
     if (!isCorrect) {
       optionButtons[answerIndex]?.classList.add("level1-ui__option--wrong");

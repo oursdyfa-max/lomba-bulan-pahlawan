@@ -84,23 +84,16 @@ export class MainMenuScreen {
     this.overlay.appendChild(this.btnContainer);
 
     // ---- POP-UP PETUNJUK & REFERENSI ----
-    const popupOverlayStyle =
-      "position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,0.6); " +
-      "display:none; justify-content:center; align-items:center; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;";
-    const popupCardStyle =
-      "background:#ffffff; color:#333; padding:30px; border-radius:12px; width:620px; max-width:92vw; " +
-      "max-height:85vh; overflow-y:auto; box-shadow:0 10px 30px rgba(0,0,0,0.5); text-align:left;";
-    const closeBtnStyle =
-      "display:block; margin:20px auto 0; padding:10px 30px; background:#e74c3c; color:#fff; border:none; " +
-      "border-radius:8px; font-weight:bold; cursor:pointer;";
+    const popupOverlayStyle = "display:none; position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,0.6); justify-content:center; align-items:center; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;";
 
     const popupPetunjuk = document.createElement("div");
     popupPetunjuk.id = "popup-petunjuk";
+    popupPetunjuk.className = "game-popup-overlay";
     popupPetunjuk.style.cssText = popupOverlayStyle;
     popupPetunjuk.innerHTML = `
-      <div style="${popupCardStyle}">
-        <h2 style="margin-top:0; text-align:center">TATA CARA PENGGUNAAN</h2>
-        <ol style="line-height:1.7; padding-left:20px">
+      <div class="game-popup-box">
+        <h2 class="game-popup-title">TATA CARA PENGGUNAAN</h2>
+        <ol class="game-popup-text" style="padding-left:20px">
           <li>Murid membuka aplikasi, memasukkan nama pada kolom “Nama Agen”, kemudian klik “MULAI MISI” untuk memulai permainan.</li>
           <li>Murid menjelajahi setiap era dan menyelesaikan berbagai misi serta interaksi, seperti mencari objek tersembunyi, memeriksa pasien, atau menyelesaikan tantangan lainnya.</li>
           <li>Setelah misi selesai, murid akan menemukan “Kapsul Sejarah”. Bacalah informasi tersebut untuk mengetahui berbagai perjuangan dan perkembangan kesehatan di masa lalu.</li>
@@ -108,7 +101,7 @@ export class MainMenuScreen {
           <li>Setelah berhasil menyelesaikan seluruh era, murid dapat melihat “Laporan Misi” yang berisi hasil permainan dan total skor yang diperoleh.</li>
           <li>Jika seluruh misi berhasil diselesaikan, murid akan mendapatkan Lencana Utama: “Detektif Sejarah Medis”.</li>
         </ol>
-        <button id="popup-petunjuk-close" style="${closeBtnStyle}">Tutup</button>
+        <button id="popup-petunjuk-close" class="game-popup-btn" style="display:block; margin:20px auto 0">Tutup</button>
       </div>
     `;
     document.body.appendChild(popupPetunjuk);
@@ -118,29 +111,30 @@ export class MainMenuScreen {
 
     const popupReferensi = document.createElement("div");
     popupReferensi.id = "popup-referensi";
+    popupReferensi.className = "game-popup-overlay";
     popupReferensi.style.cssText = popupOverlayStyle;
     popupReferensi.innerHTML = `
-      <div style="${popupCardStyle}">
-        <h2 style="margin-top:0; text-align:center">DAFTAR PUSTAKA</h2>
-        <h3>Materi Pembelajaran</h3>
-        <ul style="line-height:1.7">
+      <div class="game-popup-box">
+        <h2 class="game-popup-title">DAFTAR PUSTAKA</h2>
+        <h3 style="color:#e8b44f">Materi Pembelajaran</h3>
+        <ul class="game-popup-text">
           <li>Luwis, S. (2020). Epidemi penyakit pes di Malang, 1911–1916. Kendi.</li>
           <li>Kementerian Kesehatan RI. (2021). Pencegahan dan Pengendalian Penyakit Modul Muatan Lokal Malaria untuk Tingkat Sekolah Dasar. Jakarta: Kementerian Kesehatan RI.</li>
           <li>World Health Organization. (2020). Disseminating the revised national COVID-19 guidelines. WHO Indonesia.</li>
         </ul>
-        <h3>Musik dan Audio</h3>
-        <ul style="line-height:1.7">
+        <h3 style="color:#e8b44f">Musik dan Audio</h3>
+        <ul class="game-popup-text">
           <li>Pixabay. (n.d.). Pixabay: Free music and sound effects. https://pixabay.com/</li>
         </ul>
-        <h3>Video</h3>
-        <ul style="line-height:1.7">
+        <h3 style="color:#e8b44f">Video</h3>
+        <ul class="game-popup-text">
           <li>Google. (n.d.). Gemini [Video]. https://gemini.google.com/</li>
         </ul>
-        <h3>Aset 3D</h3>
-        <ul style="line-height:1.7">
+        <h3 style="color:#e8b44f">Aset 3D</h3>
+        <ul class="game-popup-text">
           <li>Blender Foundation. (n.d.). Blender. Blender Foundation. https://www.blender.org/</li>
         </ul>
-        <button id="popup-referensi-close" style="${closeBtnStyle}">Tutup</button>
+        <button id="popup-referensi-close" class="game-popup-btn" style="display:block; margin:20px auto 0">Tutup</button>
       </div>
     `;
     document.body.appendChild(popupReferensi);

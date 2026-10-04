@@ -5,6 +5,7 @@ import { PointerLockControls } from "three/addons/controls/PointerLockControls.j
 import { loadGLTF } from "../core/AssetLoader";
 import { GameState } from "../core/GameState";
 import { Level2UI } from "../ui/Level2UI";
+import { playBenar, playSalah } from "../core/Sfx";
 
 const LEVEL2_ASSETS = {
   environment: new URL("../../assets/Level2/PosKesehatan.glb", import.meta.url).href,
@@ -172,35 +173,21 @@ export class Level2 {
         </div>
       </div>
     `;
-    Object.assign(this.quizModal.style, {
-      position: "fixed", inset: "0", zIndex: "1000", display: "none", justifyContent: "center",
-      alignItems: "center", background: "rgba(0,0,0,0.6)", fontFamily: "Segoe UI, Tahoma, Geneva, Verdana, sans-serif",
-    });
+    Object.assign(this.quizModal.style, { display: "none" });
+    this.quizModal.className = "game-popup-overlay";
     const quizCard = this.quizModal.querySelector<HTMLElement>("#quiz-modal");
-    if (quizCard) Object.assign(quizCard.style, {
-      background: "#fff", padding: "30px", borderRadius: "12px", width: "400px", maxWidth: "90%",
-      boxShadow: "0 10px 25px rgba(0,0,0,0.3)", textAlign: "center", color: "#333",
-    });
+    if (quizCard) quizCard.className = "game-popup-box";
     this.quizModal.querySelectorAll<HTMLElement>("#quiz-state-question h2, #quiz-state-success h2, #quiz-state-fail h2").forEach((heading) => {
+      heading.classList.add("game-popup-title");
       heading.style.marginTop = "0";
     });
     const info = this.quizModal.querySelector<HTMLElement>(".quiz-patient-info");
-    if (info) Object.assign(info.style, { background: "#f8f9fa", padding: "15px", borderRadius: "8px", textAlign: "left", marginBottom: "20px", border: "1px solid #e9ecef" });
+    if (info) Object.assign(info.style, { background: "rgb(12 35 37)", padding: "15px", textAlign: "left", marginBottom: "20px", border: "1px solid #e8b44f", color: "#d8e2d8" });
     const actions = this.quizModal.querySelector<HTMLElement>(".quiz-actions");
     if (actions) Object.assign(actions.style, { display: "flex", flexDirection: "column", gap: "12px" });
-    this.quizModal.querySelectorAll<HTMLButtonElement>("button").forEach((button) => {
-      Object.assign(button.style, { border: "none", padding: "12px", borderRadius: "6px", cursor: "pointer", fontWeight: "bold", fontSize: "14px", transition: "background 0.2s", width: "100%" });
-      button.addEventListener("mouseenter", () => { button.style.filter = "brightness(0.92)"; });
-      button.addEventListener("mouseleave", () => { button.style.filter = "none"; });
-    });
+    this.quizModal.querySelectorAll<HTMLButtonElement>("button").forEach((button) => button.classList.add("game-popup-btn"));
     const choiceA = this.quizModal.querySelector<HTMLButtonElement>("#btn-choice-a");
     const choiceB = this.quizModal.querySelector<HTMLButtonElement>("#btn-choice-b");
-    if (choiceA) choiceA.style.background = "#3498db";
-    if (choiceB) choiceB.style.background = "#95a5a6";
-    const successButton = this.quizModal.querySelector<HTMLButtonElement>("#btn-lanjut-periksa");
-    const failButton = this.quizModal.querySelector<HTMLButtonElement>("#btn-ulang-kuis");
-    if (successButton) successButton.style.background = "#27ae60";
-    if (failButton) failButton.style.background = "#e74c3c";
     document.body.appendChild(this.quizModal);
     this.quizModal.querySelector<HTMLButtonElement>("#btn-choice-a")?.addEventListener("click", this.handleCorrectQuiz);
     this.quizModal.querySelector<HTMLButtonElement>("#btn-choice-b")?.addEventListener("click", this.handleWrongQuiz);
@@ -233,12 +220,12 @@ export class Level2 {
           <p>Bagus! Kamu menemukan semua lokasi yang berpotensi menjadi tempat berkembang biaknya nyamuk.</p>
           <button id="btn-to-quiz" type="button">LANJUT KE KUIS</button>
         </div>
-        <div id="panel-quiz" style="display:none;text-align:left">
-          <h3 id="quiz-title">Pertanyaan 1</h3>
-          <p id="quiz-question"></p>
-          <div id="quiz-options"></div>
-          <div id="quiz-feedback" style="display:none"></div>
-          <button id="btn-next-question" type="button" style="display:none">LANJUT</button>
+        <div id="panel-quiz" style="display:none" class="quiz-container">
+          <h3 id="quiz-title" class="quiz-title">Pertanyaan 1</h3>
+          <p id="quiz-question" class="quiz-question"></p>
+          <div id="quiz-options" class="quiz-options"></div>
+          <div id="quiz-feedback" class="quiz-feedback" style="display:none"></div>
+          <button id="btn-next-question" type="button" class="quiz-next-btn" style="display:none">LANJUT</button>
         </div>
         <div id="panel-history" style="display:none">
           <span class="history-label">KAPSUL SEJARAH — INDONESIA, 1950-an</span>
@@ -259,18 +246,19 @@ export class Level2 {
         </div>
       </div>
     `;
-    Object.assign(overlay.style, { position: "fixed", inset: "0", display: "none", justifyContent: "center", alignItems: "center", background: "rgba(0,0,0,0.8)", zIndex: "2000", fontFamily: "Segoe UI, Tahoma, Geneva, Verdana, sans-serif" });
+    Object.assign(overlay.style, { display: "none" });
+    overlay.className = "game-popup-overlay";
     const card = overlay.querySelector<HTMLElement>(".level2-end-card");
-    if (card) Object.assign(card.style, { background: "#fff", padding: "30px", borderRadius: "12px", width: "500px", maxWidth: "90%", boxShadow: "0 10px 25px rgba(0,0,0,0.5)", textAlign: "center", color: "#333" });
-    overlay.querySelectorAll<HTMLButtonElement>("button").forEach((button) => Object.assign(button.style, { marginTop: "15px", background: "#3498db", color: "white", border: "none", padding: "12px 24px", borderRadius: "6px", cursor: "pointer", fontWeight: "bold", width: "100%" }));
+    if (card) card.className = "game-popup-box level2-end-card";
+    overlay.querySelectorAll<HTMLButtonElement>("button").forEach((button) => {
+      if (!button.classList.contains("quiz-next-btn")) button.classList.add("game-popup-btn");
+    });
     const options = overlay.querySelector<HTMLElement>("#quiz-options");
     if (options) Object.assign(options.style, { display: "flex", flexDirection: "column", gap: "10px" });
-    const feedback = overlay.querySelector<HTMLElement>("#quiz-feedback");
-    if (feedback) Object.assign(feedback.style, { marginTop: "15px", padding: "10px", borderRadius: "6px", fontWeight: "bold", textAlign: "center" });
     const history = overlay.querySelector<HTMLElement>(".history-text");
-    if (history) Object.assign(history.style, { fontSize: "14px", lineHeight: "1.6", color: "#444", textAlign: "justify" });
+    if (history) Object.assign(history.style, { fontSize: "14px", lineHeight: "1.6", color: "#d8e2d8", textAlign: "justify" });
     const summary = overlay.querySelector<HTMLElement>(".summary-box");
-    if (summary) Object.assign(summary.style, { background: "#f8f9fa", padding: "20px", borderRadius: "8px", textAlign: "left", margin: "20px 0", border: "1px solid #e9ecef" });
+    if (summary) Object.assign(summary.style, { background: "rgb(12 35 37)", padding: "20px", borderRadius: "8px", textAlign: "left", margin: "20px 0", border: "1px solid #e8b44f", color: "#f4f1de" });
     overlay.querySelector<HTMLButtonElement>("#btn-to-quiz")?.addEventListener("click", this.handleStartQuiz);
     overlay.querySelector<HTMLButtonElement>("#btn-next-question")?.addEventListener("click", this.handleNextQuizQuestion);
     overlay.querySelector<HTMLButtonElement>("#btn-to-summary")?.addEventListener("click", this.handleShowSummary);
@@ -688,10 +676,12 @@ export class Level2 {
   private readonly handleCorrectQuiz = (): void => {
     if (!this.activeNpc) return;
     this.gameState.addScore(100);
+    playBenar();
     this.showQuizState("success");
   };
 
   private readonly handleWrongQuiz = (): void => {
+    playSalah();
     this.showQuizState("fail");
   };
 
@@ -828,14 +818,14 @@ export class Level2 {
     title.textContent = `Pertanyaan ${index + 1}`;
     question.textContent = quiz.question;
     feedback.style.display = "none";
+    feedback.className = "quiz-feedback";
     next.style.display = "none";
     options.replaceChildren();
     quiz.options.forEach((label, optionIndex) => {
       const button = document.createElement("button");
       button.type = "button";
-      button.className = "btn-option";
+      button.className = "quiz-option-btn";
       button.textContent = label;
-      Object.assign(button.style, { textAlign: "left", background: "#f8f9fa", color: "#333", border: "1px solid #ddd", padding: "12px", borderRadius: "6px", cursor: "pointer", fontWeight: "500" });
       button.addEventListener("click", () => this.handleQuizAnswer(optionIndex));
       options.appendChild(button);
     });
@@ -851,16 +841,21 @@ export class Level2 {
     const correct = optionIndex === quiz.answerIndex;
     if (correct) {
       this.correctAnswers += 1;
+      playBenar();
       feedback.textContent = "✅ Tepat sekali!";
-      feedback.style.background = "#d5f5e3";
-      feedback.style.color = "#18844b";
+      feedback.className = "quiz-feedback quiz-feedback--correct";
     } else {
+      playSalah();
       feedback.textContent = "❌ Jawaban anda salah, silahkan dipelajari lagi";
-      feedback.style.background = "#fadbd8";
-      feedback.style.color = "#b03a2e";
+      feedback.className = "quiz-feedback quiz-feedback--wrong";
     }
     feedback.style.display = "block";
-    options.querySelectorAll<HTMLButtonElement>("button").forEach((button) => { button.disabled = true; button.style.opacity = "0.65"; });
+    options.querySelectorAll<HTMLButtonElement>("button").forEach((button, index) => {
+      button.disabled = true;
+      button.style.opacity = "0.65";
+      if (index === quiz.answerIndex) button.classList.add("quiz-btn-correct");
+      else if (index === optionIndex) button.classList.add("quiz-btn-wrong");
+    });
     next.style.display = "block";
   }
 

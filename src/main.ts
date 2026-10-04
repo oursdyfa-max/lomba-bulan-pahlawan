@@ -1,5 +1,6 @@
 import "../style.css";
 import * as THREE from "three";
+import "./core/Sfx";
 import { Engine } from "./core/Engine";
 import { Physics } from "./core/Physics";
 import { Environment } from "./entities/Environment";
@@ -16,6 +17,7 @@ import { Level1UI } from "./ui/Level1UI";
 import { VideoScreen } from "./ui/VideoScreen";
 import { Level2UI } from "./ui/Level2UI";
 import { Level3 } from "./levels/Level3";
+import { playMenuAudio, stopMenuAudio } from "./core/MenuAudio";
 
 const canvas = document.querySelector<HTMLElement>("#canvas");
 const uiLayer = document.querySelector<HTMLElement>("#ui-layer");
@@ -23,16 +25,6 @@ const uiLayer = document.querySelector<HTMLElement>("#ui-layer");
 if (!canvas || !uiLayer) {
   throw new Error("Required game containers are missing from index.html");
 }
-
-const buttonClickSound = new Audio("/assets/Sound/klik.mp3");
-document.addEventListener("click", (event) => {
-  if (!(event.target instanceof Element) || !event.target.closest("button")) {
-    return;
-  }
-
-  buttonClickSound.currentTime = 0;
-  void buttonClickSound.play().catch(() => undefined);
-});
 
 const physics = new Physics();
 const environment = new Environment(physics.world);
@@ -104,9 +96,29 @@ const startLevel1 = (): void => {
   engine.setCinematicMode(false);
 };
 
-if (gameState.currentLevel === "START") {
+let forceRestartToLevel1 = false;
+try {
+  forceRestartToLevel1 = window.localStorage.getItem("dokter_djawa_restart") === "1";
+  if (forceRestartToLevel1) {
+    window.localStorage.removeItem("dokter_djawa_restart");
+  }
+} catch { /* ignore */ }
+
+if (forceRestartToLevel1 && gameState.currentLevel === "START") {
+  // Restart total: sembunyikan endgame, scene Level 3 di-reload, langsung ke Level 1
+  // dengan nama agen yang tetap tersimpan (tanpa layar input nama & main menu).
+  engine.setCinematicMode(true);
+  gameState.currentLevel = "LEVEL_1";
+  gameState.saveState();
+  environment.group.visible = false;
+  hud.setPlayerName(gameState.playerName);
+  hud.setScore(0);
+  videoScreen.playLevel1(startLevel1);
+} else if (gameState.currentLevel === "START") {
+  playMenuAudio();
   new MainMenuScreen(uiLayer, () => {
     new StartScreen(uiLayer, gameState, () => {
+      stopMenuAudio();
       engine.setCinematicMode(true);
       gameState.currentLevel = "LEVEL_1";
       gameState.saveState();
