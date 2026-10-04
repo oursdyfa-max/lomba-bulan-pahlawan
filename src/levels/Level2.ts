@@ -102,6 +102,7 @@ export class Level2 {
   private isDisposed = false;
   private assetsRequested = false;
   private isModalOpen = false;
+  onLevel3Requested: (() => void) | null = null;
 
   constructor(
     private readonly scene: THREE.Object3D,
@@ -874,11 +875,13 @@ export class Level2 {
     const score = this.endOverlay.querySelector<HTMLElement>("#summary-score");
     if (quizScore) quizScore.textContent = `${this.correctAnswers}/3`;
     if (score) score.textContent = `${this.correctAnswers * 20}/60`;
+    try { localStorage.setItem("quiz_correct_level2", String(this.correctAnswers)); } catch { /* ignore */ }
     this.showEndPanel("panel-summary");
   };
 
   private readonly handleFinishEndOverlay = (): void => {
     this.endOverlay.style.display = "none";
+    this.onLevel3Requested?.();
   };
 
   private showEndPanel(panelId: string): void {

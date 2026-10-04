@@ -14,6 +14,7 @@ import { Level2 } from "./levels/Level2";
 import { Level1UI } from "./ui/Level1UI";
 import { VideoScreen } from "./ui/VideoScreen";
 import { Level2UI } from "./ui/Level2UI";
+import { Level3 } from "./levels/Level3";
 
 const canvas = document.querySelector<HTMLElement>("#canvas");
 const uiLayer = document.querySelector<HTMLElement>("#ui-layer");
@@ -58,10 +59,22 @@ const levelManager = new LevelManager(gameState, levelRoot);
 const level1UI = new Level1UI(uiLayer, gameState, levelManager);
 const videoScreen = new VideoScreen(uiLayer);
 const level1 = new Level1(levelRoot, engine.getCamera(), engine.getRenderElement(), player, gameState, level1UI);
-const level2UI = new Level2UI(uiLayer, gameState, () => levelManager.completeLevel2());
+const level2UI = new Level2UI(uiLayer, gameState, () => level3.startTransition());
 const level2 = new Level2(levelRoot, engine.getCamera(), engine.getRenderElement(), gameState, level2UI);
+const level3 = new Level3(levelRoot, engine.getCamera(), gameState, player, () => {
+  level2.deactivate();
+  level2.dispose();
+  levelManager.clearScene();
+  environment.group.visible = false;
+  hud.setEra("Era Modern");
+  gameState.currentLevel = "LEVEL_3";
+  gameState.saveState();
+  engine.enterLevel3();
+});
+level2.onLevel3Requested = () => level3.startTransition();
 engine.setLevel1(level1);
 engine.setLevel2(level2);
+engine.setLevel3(level3);
 levelManager.configureLevel2Transition(
   () => {
     level1.deactivate();
@@ -70,16 +83,6 @@ levelManager.configureLevel2Transition(
   },
   (onComplete) => videoScreen.playLevel2(onComplete),
   () => engine.enterLevel2(),
-);
-levelManager.configureLevel3Transition(
-  () => {
-    level2.deactivate();
-    level2.dispose();
-  },
-  () => {
-    environment.group.visible = false;
-    hud.setEra("Era Modern");
-  },
 );
 hud.setPlayerName(gameState.playerName || "Dokter Djawa");
 hud.setScore(gameState.score);
@@ -113,6 +116,10 @@ if (gameState.currentLevel === "START") {
 
 if (gameState.currentLevel === "LEVEL_2") {
   engine.enterLevel2();
+}
+
+if (gameState.currentLevel === "LEVEL_3") {
+  engine.enterLevel3();
 }
 
 engine.start();

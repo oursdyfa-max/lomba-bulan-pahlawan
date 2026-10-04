@@ -201,6 +201,7 @@ export class Level1UI {
     this.getElement<HTMLHeadingElement>("h2").textContent = "🏅 REWARD LEVEL 1";
     this.getElement<HTMLParagraphElement>(".level1-ui__message").textContent =
       `LEVEL 1 SELESAI\n\n🐀 Tikus ditemukan: ${this.foundCount}/3\n🧠 Kuis: ${this.quizCorrect}/3\n\nLencana diperoleh:\n🏅 DETEKTIF WABAH`;
+    try { localStorage.setItem("quiz_correct_level1", String(this.quizCorrect)); } catch { /* ignore */ }
     this.getElement<HTMLDivElement>(".level1-ui__quiz").hidden = true;
     const continueButton = this.getElement<HTMLButtonElement>(".level1-ui__continue");
     continueButton.textContent = "LANJUT KE ERA KEMERDEKAAN";

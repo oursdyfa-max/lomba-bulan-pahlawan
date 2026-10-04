@@ -7,6 +7,7 @@ import { gameState } from "./GameState";
 import { Physics } from "./Physics";
 import type { Level1 } from "../levels/Level1";
 import type { Level2 } from "../levels/Level2";
+import type { Level3 } from "../levels/Level3";
 
 export class Engine {
   readonly scene: THREE.Scene;
@@ -17,6 +18,7 @@ export class Engine {
   private readonly orbitTarget = new THREE.Vector3(0, 1, 0);
   private level1: Level1 | null = null;
   private level2: Level2 | null = null;
+  private level3: Level3 | null = null;
   private lastLevel = gameState.currentLevel;
   private isCinematicMode = false;
 
@@ -65,6 +67,10 @@ export class Engine {
     this.level2 = level2;
   }
 
+  setLevel3(level3: Level3): void {
+    this.level3 = level3;
+  }
+
   enterLevel1(): void {
     gameState.currentLevel = "LEVEL_1";
     if (this.lastLevel === "LEVEL_1" || !this.level1) {
@@ -86,6 +92,22 @@ export class Engine {
     this.environment.group.visible = false;
     this.level2.activate();
     this.lastLevel = "LEVEL_2";
+  }
+
+  enterLevel3(): void {
+    if (!this.level3) {
+      return;
+    }
+
+    if (this.lastLevel === "LEVEL_2" && this.level2) {
+      this.level2.deactivate();
+    }
+    if (this.lastLevel === "LEVEL_1" && this.level1) {
+      this.level1.deactivate();
+    }
+    this.environment.group.visible = false;
+    this.level3.activate();
+    this.lastLevel = "LEVEL_3";
   }
 
   setCinematicMode(enabled: boolean): void {
@@ -121,6 +143,12 @@ export class Engine {
         this.level2.activate();
       }
       this.level2.update(deltaTime);
+      this.hud.setInteractionHint(false);
+    } else if (gameState.currentLevel === "LEVEL_3" && this.level3) {
+      if (this.lastLevel !== "LEVEL_3") {
+        this.level3.activate();
+      }
+      this.level3.update(deltaTime);
       this.hud.setInteractionHint(false);
     } else {
       if (this.lastLevel === "LEVEL_1" && this.level1) {
