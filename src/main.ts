@@ -104,6 +104,17 @@ try {
   }
 } catch { /* ignore */ }
 
+// --- RESET SAAT PAGE LOAD (mencegah bug refresh macet) ---
+// 1) Selalu paksa gameState kembali ke menu utama & buang state usang di storage.
+gameState.resetState();
+try {
+  window.localStorage.removeItem("quiz_correct_level1");
+  window.localStorage.removeItem("quiz_correct_level2");
+  window.localStorage.removeItem("quiz_correct_level3");
+  window.localStorage.removeItem("dokter-djawa-level1-rat-positions");
+} catch { /* ignore */ }
+// ----------------------------------------------------------
+
 if (forceRestartToLevel1 && gameState.currentLevel === "START") {
   // Restart total: sembunyikan endgame, scene Level 3 di-reload, langsung ke Level 1
   // dengan nama agen yang tetap tersimpan (tanpa layar input nama & main menu).
