@@ -17,6 +17,7 @@ import { Level1UI } from "./ui/Level1UI";
 import { VideoScreen } from "./ui/VideoScreen";
 import { Level2UI } from "./ui/Level2UI";
 import { Level3 } from "./levels/Level3";
+
 import { playMenuAudio, stopMenuAudio } from "./core/MenuAudio";
 
 const canvas = document.querySelector<HTMLElement>("#canvas");
@@ -66,6 +67,8 @@ const level3 = new Level3(levelRoot, engine.getCamera(), gameState, player, () =
 });
 level2.onLevel3Requested = () => level3.startTransition();
 engine.setLevel1(level1);
+
+
 engine.setLevel2(level2);
 engine.setLevel3(level3);
 levelManager.configureLevel2Transition(
